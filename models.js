@@ -103,6 +103,43 @@ const MECHS = [
     plus: "Tough monk: 6 ♥. 2 words in a row, SPACE destroys the closest target.", minus: "", colors: { main: 0x3a3448, acc: 0xe8384a } },
 ];
 
+/* How each partner moves and attacks in battle: [move, attack, Mega move, Mega attack].
+   move: run | fly. An attack is one move or a list (one is picked at random each time).
+   type: shot (a ball flies to the target), volley (several small shots), bolt (lightning),
+   beam (an instant ray), dash (flies to the target, strikes and flies back). big = bigger shot. */
+const A = (type, color, name, big) => ({ type, color, name, big: !!big });
+const MOVES = {
+  starter: ["run", A("shot", 0xff7a2a, "Pepper Breath"), "fly", [A("dash", 0xffb03a, "Great Tornado"), A("shot", 0xffcc33, "Terra Force", true)]],
+  frostpup: ["run", A("shot", 0x5ab8ff, "Blue Blaster"), "run", [A("volley", 0x9ad8ff, "Giga Destroyer"), A("beam", 0xbff0ff, "Cocytus Breath")]],
+  sprout: ["run", A("dash", 0x7ad858, "Poison Ivy"), "fly", A("dash", 0xff6a9a, "Thorn Whip")],
+  zapbeetle: ["fly", A("bolt", 0xffe066, "Super Shocker"), "fly", A("bolt", 0x9ad8ff, "Giga Blaster")],
+  skychick: ["fly", A("shot", 0x9aff5a, "Spiral Twister"), "fly", A("shot", 0xffb03a, "Starlight Explosion", true)],
+  tideseal: ["run", A("volley", 0x5ad0ff, "Marching Fishes"), "run", [A("beam", 0xbff0ff, "Arctic Blizzard"), A("dash", 0xc8d0dc, "Mjölnir")]],
+  rockbun: ["run", A("dash", 0xffd23a, "Diamond Shot"), "fly", A("volley", 0xffd23a, "Kachina Bombs")],
+  shadowkit: ["run", A("dash", 0xffe066, "Lightning Paw"), "fly", A("volley", 0xb0ffd0, "Sefirot Crystal")],
+  flarefox: ["run", A("shot", 0x7dff8a, "Bunny Blast"), "run", A("volley", 0xff7a3a, "Mega Barrage")],
+  halobun: ["fly", A("shot", 0xe8f8ff, "Boom Bubble"), "fly", A("volley", 0xfff0a0, "Seven Heavens")],
+  puckimp: ["run", A("dash", 0x5a9aff, "Vee Headbutt"), "fly", A("beam", 0xff5ad8, "Positron Laser")],
+  unihorn: ["run", A("volley", 0xaef0ff, "Diamond Storm"), "fly", A("volley", 0xd8a0ff, "Amethyst Wind")],
+  mechapup: ["run", A("shot", 0xff4a2a, "Pyro Sphere"), "run", [A("dash", 0xfff2a8, "Lightning Joust"), A("beam", 0xff8a8a, "Final Elysion")]],
+  sparksprite: ["run", A("shot", 0xe8f4e0, "Sticky Net"), "fly", A("dash", 0xc8d0dc, "Dimension Scissor")],
+  drakeling: ["fly", A("volley", 0xffe0a0, "Feather Strike"), "fly", A("volley", 0xff6a6a, "Wings of Glory")],
+  omnimon: ["fly", [A("shot", 0x7ad0ff, "Garuru Cannon", true), A("dash", 0xffe066, "Transcendent Sword")]],
+  alphamon: ["fly", [A("dash", 0x5af0a0, "Holy Sword"), A("beam", 0x5af0a0, "Digitalize of Soul")]],
+  gallantmoncm: ["fly", [A("dash", 0xffe080, "Invincible Sword"), A("beam", 0xff6a5a, "Quo Vadis")]],
+  magnamon: ["fly", A("beam", 0xffd23a, "Extreme Jihad")],
+  ulforceveedramon: ["fly", [A("dash", 0x9ad8ff, "Ultimate V-Wing Blade"), A("beam", 0x5a9aff, "Ray of Victory")]],
+  examon: ["fly", A("beam", 0xff6a3a, "Pendragon's Glory")],
+  craniamon: ["run", A("dash", 0xb8a8ff, "Ende Speer")],
+  dynasmon: ["fly", A("shot", 0xc8a8ff, "Breath of Wyvern", true)],
+  crusadermon: ["fly", A("volley", 0xff8ab4, "Spiral Masquerade")],
+  sleipmon: ["run", A("volley", 0x9ad8ff, "Bifrost")],
+  jesmon: ["run", A("dash", 0xff5a5a, "Schwert Geist")],
+  leopardmon: ["run", A("dash", 0xe8c060, "Leopard Lightning")],
+  gankoomon: ["run", [A("dash", 0xffa040, "Hinomaru Punch"), A("shot", 0xffffff, "Hinukamuy")]],
+};
+for (const m of MECHS) { const v = MOVES[m.id]; if (v) { m.move = v[0]; m.atk = v[1]; m.evoMove = v[2] || v[0]; m.evoAtk = v[3] || v[1]; } }
+
 /* ENEMIES (anime seasons 1–3). size decides the word length: short / mid / long. h = height in world units */
 const ENEMY_TYPES = {
   numemon: { name: "Numemon", size: "short", h: 3.0 },
@@ -396,12 +433,18 @@ function animateMech(mesh, anim, dt) {
   checkFit(r);
   const hop = anim.victory > 0 ? Math.abs(Math.sin(t * 8)) * 0.8 * Math.min(1, anim.victory) : 0;
   const breathe = Math.sin(t * 2.6);
-  const lunge = Math.sin(Math.min(1, anim.recoil) * Math.PI / 2);
-  r.body.position.set(Math.sin(t * 55) * 0.12 * anim.hit, breathe * 0.04 + hop + anim.evoFlash * 0.3, 0);
-  const sq = 1 + breathe * 0.02 - lunge * 0.06, pop = 1 + anim.evoFlash * 0.25;
+  const lunge = anim.dashing ? 0 : Math.sin(Math.min(1, anim.recoil) * Math.PI / 2);
+  // in battle (anim.moving) runners bounce along and flyers hover; a dash is a straight flight
+  const mv = anim.moving ? (evo ? r.def.evoMove : r.def.move) || "run" : "";
+  let lift = 0, bounce = 0, lean = 0, land = 0;
+  if (anim.dashing) { lift = 0.4; lean = -0.22; }
+  else if (mv === "fly") { lift = 0.9 + Math.sin(t * 2.4) * 0.22; lean = -0.05 + Math.sin(t * 2.4 + 1) * 0.03; }
+  else if (mv === "run") { const c = Math.abs(Math.sin(t * 9)); bounce = c * 0.3; land = (1 - c) * 0.07; lean = -0.07 + Math.sin(t * 18) * 0.025; }
+  r.body.position.set(Math.sin(t * 55) * 0.12 * anim.hit, breathe * 0.04 + hop + anim.evoFlash * 0.3 + lift + bounce, 0);
+  const sq = 1 + breathe * 0.02 - lunge * 0.06 - land, pop = 1 + anim.evoFlash * 0.25;
   r.spr.scale.set(r.bw / sq * pop, r.bh * sq * pop, 1); r.flash.scale.copy(r.spr.scale);
   r.spr.center.x = r.flash.center.x = 0.5 - lunge * 0.22; // lunge to the right
-  r.spr.material.rotation = r.flash.material.rotation = -lunge * 0.12 - anim.tilt * 0.08 * anim.aiming + Math.sin(t * 1.3) * 0.02;
+  r.spr.material.rotation = r.flash.material.rotation = lean - lunge * 0.12 - anim.tilt * 0.08 * anim.aiming + Math.sin(t * 1.3) * 0.02;
   r.spr.material.color.setRGB(1, 1 - anim.hit * 0.55, 1 - anim.hit * 0.55);
   r.flash.material.opacity = Math.max(anim.evoFlash / 0.7, anim.hit > 0.75 ? (anim.hit - 0.75) * 3 : 0, anim.flash > 0 ? 0.3 : 0);
   if (r.aura) {
@@ -409,7 +452,7 @@ function animateMech(mesh, anim, dt) {
     r.aura.material.opacity = on ? (evo || anim.special > 0 ? 0.32 : 0.18) + 0.12 * k + anim.evoFlash * 0.6 : anim.evoFlash * 0.8;
     r.aura.scale.setScalar(r.aura.userData.s * (1 + 0.06 * k + anim.evoFlash * 0.5));
   }
-  if (r.shadow) r.shadow.material.opacity = 1 - Math.min(0.6, hop * 0.5);
+  if (r.shadow) { groundShadow(r, mesh); r.shadow.material.opacity *= 1 - Math.min(0.6, (hop + lift) * 0.4); }
 }
 
 /* =====================================================================

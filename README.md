@@ -223,7 +223,7 @@ The game has **18 festival events** and switches them on by itself — you don't
   - `1`: 💣 clear the screen
   - `2`: ❄️ freeze viruses for 5 seconds
   - `3`: 🛡️ shield (blocks one hit)
-- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves while you keep a **combo of 25+ words** (this is just for looks). The 13 **Royal Knights** are already Mega and don't evolve: at a combo of 25, 50 and 100 they give you an item instead.
+- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves after **20 words in a row** and stays evolved until you make **3 mistakes** (this is just for looks). Each partner has its own attack: some shoot fireballs or beams, others fly up to the enemy, strike and fly back (Omnimon randomly uses the Garuru Cannon or the Transcendent Sword). The 13 **Royal Knights** are already Mega and don't evolve: at a combo of 25, 50 and 100 they give you an item instead.
 - Partners just play differently. A more expensive partner is **not** simply stronger:
   - Every partner has 4–6 ♥
   - Partners with more ♥ earn fewer coins
@@ -280,7 +280,7 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ### Fun extras
 
-- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 25 your partner evolves (Royal Knights give an item instead).
+- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 20 your partner evolves (Royal Knights give items at 25, 50 and 100 instead).
 - **Final blow:** when a boss goes down, the game switches to slow motion and the camera rushes in before the big explosion.
 - **Revenge viruses:** words you mistyped come back in your next solo game as golden ⭐ viruses worth **double points and coins**. Beat one and that word leaves your revenge list.
 - **Chinese meanings:** when a word is beaten, its Chinese meaning pops up (switch it off with the **中文** button at the base). Mistyped words on the results screen show their meanings too.

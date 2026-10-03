@@ -172,11 +172,66 @@ function explode(pos, color, count, size, speed) {
   flash.position.copy(pos); scene.add(flash);
   effects.push({ obj: flash, life: 0.22, max: 0.22, kind: "flash", s: size * 4 });
 }
+/* ---------- partner attacks (see MOVES in models.js). Each returns the seconds until it hits. ---------- */
+let slashTex = null;
+function slashTexture() { // a white crescent with a soft glow
+  if (slashTex) return slashTex;
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d"); x.lineCap = "round";
+  for (const [w, a] of [[22, 0.25], [12, 0.6], [5, 1]]) { x.strokeStyle = `rgba(255,255,255,${a})`; x.lineWidth = w; x.beginPath(); x.arc(40, 64, 50, -1.1, 1.1); x.stroke(); }
+  return (slashTex = new THREE.CanvasTexture(c));
+}
+function glowBall(color, size) {
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTexture(), color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  sp.scale.setScalar(size); scene.add(sp); return sp;
+}
+function projectile(from, to, color, size, dur, delay, arc) {
+  const sp = glowBall(color, size), core = glowBall(0xffffff, size * 0.45);
+  sp.visible = core.visible = false;
+  effects.push({ obj: sp, core, life: dur + delay, max: dur, delay, kind: "proj", from: from.clone(), to: to.clone(), arc: arc || 0, color, size });
+  return dur + delay;
+}
+function attackFx(a, from, to, big) {
+  const c = a.color, d = from.distanceTo(to);
+  if (a.type === "beam") { beam(from, to, c, big ? 0.35 : 0.22, 0.3); beam(from, to, 0xffffff, big ? 0.12 : 0.07, 0.25); return 0; }
+  if (a.type === "bolt") { // zig-zag lightning made of short beams
+    let p0 = from.clone(); const n = 7;
+    for (let i = 1; i <= n; i++) {
+      const p1 = from.clone().lerp(to, i / n); if (i < n) p1.add(new V3((Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 1.2));
+      beam(p0, p1, c, 0.16, 0.22); beam(p0, p1, 0xffffff, 0.05, 0.2); p0 = p1;
+    }
+    return 0;
+  }
+  if (a.type === "shot") return projectile(from, to, c, (a.big ? 4.2 : 2.6) * (big ? 1 : 0.8), Math.min(0.3, Math.max(0.12, d / 160)), 0, 0.15);
+  if (a.type === "volley") { let t = 0; for (let i = 0; i < 4; i++) t = projectile(from, to.clone().add(new V3((Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5, 0)), c, 1.3, Math.min(0.26, Math.max(0.12, d / 180)), i * 0.045, (i % 2 ? 1 : -1) * 0.25); return t; }
+  if (a.type === "dash") { // the partner flies there (game.js moves it); a crescent slash flashes on arrival
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: slashTexture(), color: c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+    sp.position.copy(to); sp.scale.setScalar(big ? 7 : 5.5); sp.material.rotation = Math.random() * 0.8 - 0.4; scene.add(sp);
+    effects.push({ obj: sp, life: DASH.out + 0.25, max: 0.25, delay: DASH.out, kind: "slash" });
+    return DASH.out;
+  }
+  beam(from, to, c, 0.18, 0.22); return 0;
+}
+const DASH = { out: 0.14, hold: 0.08, back: 0.22 };
+
 function updateEffects(dt) {
   for (let i = effects.length - 1; i >= 0; i--) {
     const e = effects[i]; e.life -= dt;
     const k = Math.max(0, e.life / e.max);
-    if (e.kind === "beam") { e.obj.material.opacity = k; e.obj.scale.x = e.obj.scale.z = e.w * (0.4 + k * 0.6); }
+    if (e.kind === "proj") {
+      const run = e.max + e.delay - e.life; // seconds since launch
+      const k = Math.min(1, Math.max(0, (run - e.delay) / e.max));
+      const on = run >= e.delay && e.life > 0;
+      e.obj.visible = e.core.visible = on;
+      if (on) {
+        const pos = e.from.clone().lerp(e.to, k); pos.y += Math.sin(k * Math.PI) * e.arc * e.from.distanceTo(e.to) * 0.25;
+        e.obj.position.copy(pos); e.core.position.copy(pos);
+        if (Math.random() < 0.6) { const tr = glowBall(e.color, e.size * 0.5); tr.position.copy(pos); effects.push({ obj: tr, life: 0.18, max: 0.18, kind: "trail", s: e.size * 0.5 }); }
+      }
+      if (e.life - dt <= 0) { scene.remove(e.core); e.core.material.dispose(); }
+    } else if (e.kind === "trail") { e.obj.material.opacity = k * 0.8; e.obj.scale.setScalar(e.s * k); }
+    else if (e.kind === "slash") { const run = e.max + e.delay - e.life; e.obj.material.opacity = run < e.delay ? 0 : k; e.obj.scale.multiplyScalar(run < e.delay ? 1 : 1 + dt * 2); }
+    else if (e.kind === "beam") { e.obj.material.opacity = k; e.obj.scale.x = e.obj.scale.z = e.w * (0.4 + k * 0.6); }
     else if (e.kind === "burst") {
       const a = e.obj.geometry.attributes.position;
       for (let j = 0; j < e.vel.length; j++) { e.vel[j].y -= dt * 6; a.array[j * 3] += e.vel[j].x * dt; a.array[j * 3 + 1] += e.vel[j].y * dt; a.array[j * 3 + 2] += e.vel[j].z * dt; }

@@ -85,7 +85,7 @@ function startGame(opts) {
     combo: 0, maxCombo: 0, charge: 0, correct: 0, keystrokes: 0, mistakes: {}, time: 0, activeTime: 0,
     paused: false, over: false, myKills: 0, myBosses: 0, coins: 0, shake: 0, perfT: 0, perfN: 0, perfChecked: false,
     snapT: 0, statsT: 0, bossOrder: null, level: Number(opts.level) || 1, event: opts.event || "", eventMult: opts.event && EVENTS[opts.event] ? EVENTS[opts.event].bonus : 1,
-    revenge: opts.mode === "solo" ? revengeList() : {}, revengeKills: 0, comboTier: 0, slowmo: 0,
+    revenge: opts.mode === "solo" ? revengeList() : {}, revengeKills: 0, comboTier: 0, slowmo: 0, evolved: false, evoMiss: 0,
   });
   G.players = opts.players.map((pi, i) => makePlayer(pi, i, n));
   G.me = player(G.myPid);
@@ -162,11 +162,11 @@ function createTarget(ev) {
   updateHud();
 }
 
-function removeTarget(t) {
+function removeTarget(t, keepMesh) {
   if (!t || !t.alive) return;
   t.alive = false;
   if (t.el) t.el.remove();
-  if (t.kind !== "boss") scene.remove(t.mesh);
+  if (t.kind !== "boss" && !keepMesh) scene.remove(t.mesh);
   const i = G.targets.indexOf(t); if (i >= 0) G.targets.splice(i, 1);
   delete G.byId[t.id];
   if (G.lock === t) G.lock = null;
@@ -177,13 +177,28 @@ function targetPoint(t) {
   return t.mesh.position.clone().add(new V3(0, t.kind === "missile" ? 0 : (t.mesh.userData.top || 5) * 0.45, 0));
 }
 function muzzlePos(p) { const v = new V3(); if (p && p.mesh) p.mesh.userData.rig.muzzle.getWorldPosition(v); return v; }
+/* the partner's own attack move (MOVES in models.js); the target explodes when the attack arrives */
+function pickAttack(p) {
+  const evo = !p.mech.knight && (p.anim.evo || p.anim.special > 0);
+  const a = (evo ? p.mech.evoAtk : p.mech.atk) || { type: "beam", color: 0x6fe8ff };
+  return Array.isArray(a) ? a[Math.floor(Math.random() * a.length)] : a;
+}
 function shootFx(p, t, big) {
   if (!p || !t) return;
   MODELS.aimMech(p.mesh, p.anim, targetPoint(t));
   MODELS.fireMech(p.anim, big);
   p.aimAt = t; p.aimT = 1.2;
-  beam(muzzlePos(p), targetPoint(t), big ? (p.pid === G.myPid ? 0xffe066 : 0xff9ad5) : 0x6fe8ff, big ? 0.18 : 0.05, big ? 0.22 : 0.08);
+  const a = pickAttack(p), to = targetPoint(t);
+  if (a.type === "dash") { // fly to just in front of the target, strike, fly back
+    const off = t.kind === "boss" ? new V3(-7, -6, 6) : new V3(-2.4, -1.6, 1.4);
+    const dest = to.clone().add(off); dest.y = Math.max(0, dest.y);
+    p.dash = { t: 0, from: p.mesh.position.clone(), to: dest };
+  }
+  const delay = attackFx(a, muzzlePos(p), to, big);
+  t.impactAt = performance.now() + delay * 1000;
+  sfx("atk-" + (a.big ? "big" : a.type));
 }
+function impactDelay(t) { return t && t.impactAt ? Math.max(0, t.impactAt - performance.now()) : 0; }
 
 function explodeTarget(t) {
   const col = t.kind === "missile" ? 0xffaa44 : ({ short: 0xffcc66, mid: 0x7dff9a, long: 0xc58bff })[(MODELS.ENEMY_TYPES[t.type] || {}).size] || 0xff8844;
@@ -197,7 +212,9 @@ function onKill(ev) {
   if (p) { p.score += ev.pts || 0; if (t.kind === "enemy") p.kills++; }
   if (p && ev.how === "type" && !(ev.by === G.myPid && t.myShot)) shootFx(p, t, true);
   const screen = project(t.pos);
-  explodeTarget(t);
+  const wait = impactDelay(t); // the attack is still flying: explode when it arrives
+  if (wait > 20) { const m = t.mesh; setTimeout(() => { explodeTarget(t); if (t.kind !== "boss") scene.remove(m); }, wait); }
+  else explodeTarget(t);
   if (screen && t.kind !== "boss") showMeaning(t.word, screen.x, screen.y + 26);
   if (t.kind === "enemy") G.stageKills++;
   if (ev.by === G.myPid) {
@@ -210,7 +227,7 @@ function onKill(ev) {
     if (screen) floater(screen.x, screen.y - 20, `STOLEN by ${p.nick}!`, p.color);
     sfx("steal");
   }
-  removeTarget(t);
+  removeTarget(t, wait > 20);
   updateHud();
 }
 
@@ -221,9 +238,8 @@ function onBossHit(ev) {
   if (p && G.mode === "multi" && ev.by !== G.myPid && t.typed > 0) { const sc = project(t.pos); if (sc) floater(sc.x, sc.y - 20, `${p.nick} hit the boss first!`, p.color); }
   b.hp = ev.hp;
   { const sc = project(t.pos); if (sc) showMeaning(t.word, sc.x, sc.y + 30); }
-  explode(targetPoint(t).add(new V3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 2, 0)), 0xff8844, 50, 0.45, 10);
-  MODELS.hitFlash(t.mesh, 0.3);
-  sfx("kill");
+  const boom = () => { explode(targetPoint(t).add(new V3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 2, 0)), 0xff8844, 50, 0.45, 10); MODELS.hitFlash(t.mesh, 0.3); sfx("kill"); };
+  const wait = impactDelay(t); if (wait > 20) setTimeout(boom, wait); else boom();
   t.word = ev.word; t.typed = 0; t.myShot = false; t.pending = false; t.others = {};
   if (G.lock === t) G.lock = null;
   t.el.classList.remove("locked", "pending");
@@ -418,7 +434,7 @@ function resolveKill(id, pid, combo, how) {
 
 function resolveBossHit(pid, combo, word, dmg) {
   const b = G.boss, p = player(pid);
-  if (!b || !p || b.enter < 1) return;
+  if (!b || !p) return;
   if (word && b.target.word !== word) return; // someone else already finished this word
   b.hp = Math.max(0, b.hp - dmg);
   const comboMult = Math.min(2, 1 + (combo || 0) * 0.05);
@@ -573,7 +589,19 @@ function update(dt) {
     if (p.pid === G.myPid && G.lock && G.lock.alive) aim = targetPoint(G.lock);
     else if (p.aimAt && p.aimAt.alive && p.aimT > 0) aim = targetPoint(p.aimAt);
     p.aimT = Math.max(0, p.aimT - dt);
-    p.anim.evo = p.pid === G.myPid && G.comboTier >= 2; // a 25+ combo makes your partner evolve (looks only)
+    p.anim.evo = p.pid === G.myPid && G.evolved; // 20 in a row: your partner evolves (looks only) until 3 mistakes
+    p.anim.moving = true;
+    if (p.dash) { // melee attack: fly out, strike, fly back
+      const D = p.dash, base = new V3(p.x, 0, 0), ease = (k) => 1 - (1 - k) * (1 - k);
+      D.t += dt; let k;
+      if (D.t < DASH.out) k = ease(D.t / DASH.out);
+      else if (D.t < DASH.out + DASH.hold) k = 1;
+      else if (D.t < DASH.out + DASH.hold + DASH.back) k = 1 - ease((D.t - DASH.out - DASH.hold) / DASH.back);
+      else { k = 0; p.dash = null; }
+      p.mesh.position.lerpVectors(base, D.to, k);
+      p.anim.dashing = !!p.dash;
+    }
+    p.shieldMesh.position.set(p.mesh.position.x, p.mesh.position.y + 1.9, p.mesh.position.z + 0.3);
     MODELS.aimMech(p.mesh, p.anim, aim);
     MODELS.animateMech(p.mesh, p.anim, dt);
     p.shieldMesh.visible = p.shield && p.alive;
@@ -616,7 +644,7 @@ function handleChar(ch) {
   G.keystrokes++;
   let t = G.lock;
   if (!t) {
-    const cands = G.targets.filter(x => x.alive && !x.pending && x.word[0] === ch && !(x.kind === "boss" && G.boss && G.boss.enter < 1));
+    const cands = G.targets.filter(x => x.alive && !x.pending && x.word[0] === ch);
     if (!cands.length) { miss(null); return; }
     t = cands.reduce((a, b) => threat(b) > threat(a) ? b : a);
     G.lock = t; t.el.classList.add("locked");
@@ -669,6 +697,8 @@ function showMeaning(word, x, y) {
 
 function miss(t) {
   G.combo = 0;
+  if (G.evolved && ++G.evoMiss >= DEVOLVE_MISSES) { G.evolved = false; floater(window.innerWidth / 2, 190, `${G.me.mech.name} went back to its rookie form`, "#8fe3ff"); }
+  else if (G.evolved) floater(window.innerWidth / 2, 190, `Careful! ${DEVOLVE_MISSES - G.evoMiss} more mistake${DEVOLVE_MISSES - G.evoMiss > 1 ? "s" : ""} and your partner turns back`, "#ffb3bb");
   if (G.comboTier) setComboTier(0);
   const sp = G.me.mech.special;
   if (sp && G.charge < sp.charge) G.charge = 0;
@@ -686,8 +716,13 @@ function releaseLock() {
   sendProg(t);
 }
 
+const EVOLVE_AT = 20, DEVOLVE_MISSES = 3;
 function completeWord(t) {
   G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
+  if (G.combo >= EVOLVE_AT && !G.evolved && !G.me.mech.knight) {
+    G.evolved = true; G.evoMiss = 0; sfx("evolve");
+    floater(window.innerWidth / 2, 190, `${G.me.mech.name} DIGIVOLVED INTO ${G.me.mech.evo}!`, "#ffe066");
+  }
   comboCheck();
   const sp = G.me.mech.special;
   if (sp) G.charge = Math.min(sp.charge, G.charge + 1);
