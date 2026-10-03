@@ -49,9 +49,13 @@ var DEFAULT_SETTINGS = [
 ];
 
 // 伙伴怪兽价钱（要和网页 models.js 里的 MECHS 一致）
+// Partner prices (ids from models.js; the first 15 are the anime partners: starter = Agumon ... drakeling = Hawkmon)
 var MECH_PRICES = {
   starter: 0, frostpup: 300, sprout: 300, zapbeetle: 400, skychick: 400, tideseal: 600, rockbun: 600, shadowkit: 800,
   flarefox: 900, halobun: 900, puckimp: 1000, unihorn: 1000, mechapup: 1100, sparksprite: 1100, drakeling: 1200,
+  // Royal Knights
+  omnimon: 3000, alphamon: 2800, gallantmoncm: 2500, magnamon: 2500, ulforceveedramon: 2500, examon: 2500, craniamon: 2200,
+  dynasmon: 2000, crusadermon: 2000, sleipmon: 2000, jesmon: 2000, leopardmon: 1800, gankoomon: 1800,
 };
 // 颜色（换色）价钱（要和网页 js/progress.js 里的 SKINS 一致）
 var SKIN_PRICES = { 'default': 0, desert: 300, arctic: 300, sakura: 400, blackops: 400, neon: 600, gold: 800, optical: 1000 };

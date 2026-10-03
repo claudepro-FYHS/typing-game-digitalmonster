@@ -1,6 +1,6 @@
 # Digi Monster Typer 数码怪兽击字（中文说明）
 
-一个 **高清像素风格（HD pixel）** 的英文打字游戏，灵感来自数码宝贝一类的「数码怪兽」动画。每个学生都有一只**伙伴怪兽**，打出病毒怪兽身上的英文单字就能攻击、打倒它们——打得好，伙伴还会**进化**！每一关最后有巨大的 Boss 怪兽。
+一个用 **Q 版数码宝贝**（动画第一到第三代）做的英文打字游戏。每个学生都有一只**伙伴数码兽**，打出敌人身上的英文单字就能攻击、打倒它们——打得好，伙伴还会**进化**成究极体！每一关最后有巨大的 Boss。
 可以单人玩，也可以 2–4 人连线对战抢分。
 
 - **游戏网址：** https://claudepro-fyhs.github.io/typing-game-digitalmonster/
@@ -20,7 +20,8 @@
 | `words.js` | 词库（11 个词库，约 2800 个单字，包括新的 **Digital World & Monsters** 数码世界词库） | 想加单字时才改（见下面） |
 | `meanings.js` | 打倒怪兽时显示的中文释义 | 想帮新单字加中文意思时才改 |
 | `apps-script/Code.gs` | 贴进 Google Apps Script 的接收端程序 | 不用（照步骤复制贴上） |
-| `models.js` | 用程序画出来的像素怪兽：15 只伙伴（各有进化形态）、13 种病毒怪兽、15 个 Boss 加 17 个节日 Boss | 不用 |
+| `models.js` | 数码兽名单和动作：15 只伙伴（各有究极体）加 13 位皇家骑士、13 种敌人、15 个 Boss 加 17 个节日 Boss | 不用 |
+| `art/` | 数码兽的图（每只一个 SVG 文件，由 `tools/art/` 生成） | 不用 |
 | `js/` | 游戏程序（单人、多人连线、等级与徽章、排行榜、老师后台） | 不用 |
 | `lib/` | Three.js（3D 引擎）、PeerJS（多人连线），都是 MIT 授权 | 不用 |
 | `tests/` | 自动测试（接收端和网页） | 不用 |
@@ -131,7 +132,7 @@
 ### 管理员（Admins 分页）
 
 - 在 A 栏填 email（例如您自己的 `xxx@foonyew.edu.my`），B 栏填 `YES`。
-- 管理员的金币显示为 **∞**，15 只伙伴怪兽全部可以直接使用。
+- 管理员的金币显示为 **∞**，28 只伙伴全部可以直接使用。
 - 管理员的成绩会记录在 Scores 分页，但**不会出现在排行榜和老师后台**，不会影响学生的数据。
 - 管理员填资料时，班级可以选 **STAFF**。
 - 想取消管理员：把 B 栏改成 `NO`，或者删掉那一行。
@@ -157,24 +158,24 @@
 
 | 节日 | ID | 日期（马来西亚时间） | 节日 Boss |
 |---|---|---|---|
-| 🧧 农历新年 | `cny` | **整个 1 月和 2 月** | 黄金龙 Golden Dragon |
-| 🏮 元宵节 | `lantern` | 正月十五，前后 7 天 | 灯笼泰坦 Lantern Titan |
+| 🧧 农历新年 | `cny` | **整个 1 月和 2 月** | 苍龙兽 Azulongmon |
+| 🏮 元宵节 | `lantern` | 正月十五，前后 7 天 | 朱雀兽 Zhuqiaomon |
 | 🌿 清明节 | `qingming` | 约 4 月 4–5 日，前后 7 天 | （没有特别 Boss，用普通 Boss） |
-| 🐉 端午节 | `dragonboat` | 五月初五，前后 7 天 | 龙舟战舰 Dragon Boat Dreadnought |
-| 🌌 七夕 | `qixi` | 七月初七，前后 7 天 | 鹊桥 Magpie Bridge |
-| 🥮 中秋节 | `midautumn` | 八月十五，前后 7 天 | 玉兔月亮 Jade Rabbit Moon |
-| ⛰️ 重阳节 | `doubleninth` | 九月初九，前后 7 天 | 登高要塞 Mountain Fortress |
-| 🍡 冬至 | `solstice` | 约 12 月 21–22 日，前后 7 天 | 汤圆泰坦 Tangyuan Titan |
-| 🎆 元旦 | `newyear` | 1 月 1 日，前后 7 天 | 倒数钟楼 Countdown Tower |
-| 💝 情人节 | `valentine` | 2 月 14 日，前后 7 天 | 爱心天使 Heart Seraph |
-| 🤡 愚人节 | `aprilfools` | 4 月 1 日，前后 7 天 | 恶作剧小丑 Prank Jester |
-| 🥚 复活节 | `easter` | 复活节星期日，前后 7 天 | 彩蛋母舰 Egg Mothership |
-| 💐 母亲节 | `mothersday` | 5 月第 2 个星期日，前后 7 天 | 守护女神 Guardian Goddess |
-| 👔 父亲节 | `fathersday` | 6 月第 3 个星期日，前后 7 天 | 钢铁守护者 Iron Guardian |
-| 🎃 万圣节 | `halloween` | 10 月 31 日，前后 7 天 | 南瓜幽灵 Pumpkin Phantom |
-| 🎄 圣诞节 | `christmas` | 12 月 25 日，前后 7 天 | 圣诞树泰坦 Tannenbaum Titan |
-| 🌺 国庆日 | `merdeka` | 8 月 31 日，前后 7 天 | 犀鸟守护者 Hornbill Guardian |
-| 🎓 校庆 | `anniversary` | **老师在 Events 分页填日期** | 百年泰坦 Centennial Titan |
+| 🐉 端午节 | `dragonboat` | 五月初五，前后 7 天 | 巨型海龙兽 MegaSeadramon |
+| 🌌 七夕 | `qixi` | 七月初七，前后 7 天 | 金鸡兽 Sinduramon |
+| 🥮 中秋节 | `midautumn` | 八月十五，前后 7 天 | 安提拉兽 Antylamon |
+| ⛰️ 重阳节 | `doubleninth` | 九月初九，前后 7 天 | 玄武兽 Ebonwumon |
+| 🍡 冬至 | `solstice` | 约 12 月 21–22 日，前后 7 天 | 冰恶魔兽 IceDevimon |
+| 🎆 元旦 | `newyear` | 1 月 1 日，前后 7 天 | 暗黑兽 Diaboromon |
+| 💝 情人节 | `valentine` | 2 月 14 日，前后 7 天 | 女恶魔兽 LadyDevimon |
+| 🤡 愚人节 | `aprilfools` | 4 月 1 日，前后 7 天 | 悟空兽 Etemon |
+| 🥚 复活节 | `easter` | 复活节星期日，前后 7 天 | 蛋蛋兽 Digitamamon |
+| 💐 母亲节 | `mothersday` | 5 月第 2 个星期日，前后 7 天 | 母体 D-Reaper |
+| 👔 父亲节 | `fathersday` | 6 月第 3 个星期日，前后 7 天 | 狮子兽 Leomon |
+| 🎃 万圣节 | `halloween` | 10 月 31 日，前后 7 天 | 南瓜兽 Pumpkinmon |
+| 🎄 圣诞节 | `christmas` | 12 月 25 日，前后 7 天 | 樱桃兽 Cherrymon |
+| 🌺 国庆日 | `merdeka` | 8 月 31 日，前后 7 天 | 鹦鹉兽 Parrotmon |
+| 🎓 校庆 | `anniversary` | **老师在 Events 分页填日期** | 白虎兽 Baihumon |
 
 - 每个节日从**节日前一个礼拜到节日后一个礼拜**（农历新年是整个 1 月和 2 月）。
 - **节日重叠时**：当天就是节日的那个优先；不然**比较短的活动优先**（所以情人节、元宵节在新年两个月里面也会出现）。
@@ -222,30 +223,51 @@
   - `1`：💣 清屏
   - `2`：❄️ 冻结病毒 5 秒
   - `3`：🛡️ 护盾（挡一次攻击）
-- **进化**：很多伙伴有**必杀技**：连续打对几个字后按 `Space` 发动（画面下方 🧬 会显示进度），伙伴会**进化**成更大的形态并攻击。另外，只要连击保持在 **25 字以上**，每只伙伴都会进化（只是外观）。
+- **进化**：很多伙伴有**必杀技**：连续打对几个字后按 `Space` 发动（画面下方 🧬 会显示进度），伙伴会**进化**成更大的形态并攻击。另外，只要连击保持在 **25 字以上**，每只伙伴都会进化（只是外观）。13 位**皇家骑士**本来就是究极体，不会进化：连击到 25、50、100 字时改送一个道具。
 - 伙伴只是玩法不同，没有「越贵越强」：
   - 血量都在 4–6 ♥ 之间
   - 血多的伙伴金币收入较少
   - 金币只能买伙伴和颜色，不能买道具
-- 所有怪兽都是**原创的像素画**，参考数码怪兽动画的风格（没有使用官方角色）：
+- 伙伴是《数码宝贝大冒险》《02》《驯兽师之王》的 15 只主角数码兽；战斗时伙伴站在左边，敌人从右上方过来。所有图都是同人 Q 版画，只供课堂使用（数码宝贝的版权属于 Bandai / 东映动画）：
 
-| 伙伴 → 进化形态 | 类型 | 价钱 | ♥ | 特点 |
+| 伙伴 → 究极体 | 类型 | 价钱 | ♥ | 特点 |
 |---|---|---|---|---|
-| EMBER → BLAZEREX | 火龙 | 免费 | 5 | 平衡型，每关开始自带护盾 |
-| FROSTPUP → GLACIWOLF | 冰兽 | 300 | 4 | 金币 +20% |
-| SPROUTLING → THORNGUARD | 植物 | 300 | 5 | 道具掉率 ×1.6，金币 −10% |
-| ZAPBEETLE → VOLTHORN | 昆虫 | 400 | 5 | 必杀：连续 3 字 → 打倒最近 1 个目标 |
-| SKYCHICK → STORMHAWK | 鸟 | 400 | 4 | Boss 攻击慢 25%，金币 +10% |
-| TIDESEAL → ICEWALRUS | 海兽 | 600 | 5 | 必杀：连续 5 字 → 冻结病毒 4 秒 |
-| ROCKBUN → BOULDERON | 岩石 | 600 | 6 | 必杀：连续 6 字 → 打倒 2 个目标，金币 −20% |
-| SHADOWKIT → NIGHTPANTHER | 影猫 | 800 | 4 | 必杀：连续 5 字 → 病毒减速一半 6 秒 |
-| FLAREFOX → INFERNO KITSUNE | 火狐 | 900 | 5 | 必杀：连续 8 字 → 狐火风暴打倒 5 个目标 |
-| HALOBUN → SERAPHARE | 圣兽 | 900 | 5 | 必杀：连续 5 字 → 获得护盾 |
-| PUCKIMP → INFERNIMP | 小恶魔 | 1000 | 5 | 金币 +10%；必杀：连续 3 字 → 打倒最近 1 个 |
-| UNIHORN → PRISM UNICORN | 圣兽 | 1000 | 5 | 必杀：连续 6 字 → 病毒减速 8 秒 |
-| MECHAPUP → CYBERHOUND | 机械 | 1100 | 5 | 必杀：连续 7 字 → 打倒 4 个目标 |
-| SPARKSPRITE → STARFAIRY | 星星精灵 | 1100 | 5 | 必杀：连续 6 字 → 冻结 6 秒，道具 ×1.2 |
-| DRAKELING → SKYDRAKE | 龙 | 1200 | 4 | 必杀：连续 5 字 → 龙之吐息打倒 3 个目标 |
+| 亚古兽 Agumon → 战斗暴龙兽 WarGreymon | 疫苗 · 爬虫 | 免费 | 5 | 平衡型，每关开始自带护盾 |
+| 加布兽 Gabumon → 钢铁加鲁鲁 MetalGarurumon | 数据 · 爬虫 | 300 | 4 | 金币 +20% |
+| 巴鲁兽 Palmon → 蔷薇兽 Rosemon | 数据 · 植物 | 300 | 5 | 道具掉率 ×1.6，金币 −10% |
+| 甲虫兽 Tentomon → 大力甲虫兽 HerculesKabuterimon | 疫苗 · 昆虫 | 400 | 5 | 必杀：连续 3 字 → 打倒最近 1 个目标 |
+| 比丘兽 Biyomon → 凤凰兽 Phoenixmon | 疫苗 · 鸟 | 400 | 4 | Boss 攻击慢 25%，金币 +10% |
+| 哥玛兽 Gomamon → 维京兽 Vikemon | 疫苗 · 海兽 | 600 | 5 | 必杀：连续 5 字 → 冻结病毒 4 秒 |
+| 犰狳兽 Armadillomon → 赤铜兽 Shakkoumon | 自由 · 哺乳 | 600 | 6 | 必杀：连续 6 字 → 打倒 2 个目标，金币 −20% |
+| 迪路兽 Gatomon → 奥法尼兽 Ophanimon | 疫苗 · 圣兽 | 800 | 4 | 必杀：连续 5 字 → 病毒减速一半 6 秒 |
+| 狗狗兽 Terriermon → 究极加尔古兽 MegaGargomon | 疫苗 · 兽 | 900 | 5 | 必杀：连续 8 字 → 打倒 5 个目标 |
+| 巴达兽 Patamon → 炽天使兽 Seraphimon | 数据 · 哺乳 | 900 | 5 | 必杀：连续 5 字 → 获得护盾 |
+| 小V兽 Veemon → 帝皇龙甲兽 Imperialdramon | 自由 · 龙 | 1000 | 5 | 金币 +10%；必杀：连续 3 字 → 打倒最近 1 个 |
+| 妖狐兽 Renamon → 沙古牙兽 Sakuyamon | 数据 · 兽 | 1000 | 5 | 必杀：连续 6 字 → 病毒减速 8 秒 |
+| 基尔兽 Guilmon → 红莲骑士兽 Gallantmon | 病毒 · 爬虫 | 1100 | 5 | 必杀：连续 7 字 → 打倒 4 个目标 |
+| 小虫兽 Wormmon → 大锹形虫兽 GrandisKuwagamon | 自由 · 昆虫 | 1100 | 5 | 必杀：连续 6 字 → 冻结 6 秒，道具 ×1.2 |
+| 鹰兽 Hawkmon → 瓦尔多兽 Valdurmon | 数据 · 鸟 | 1200 | 4 | 必杀：连续 5 字 → 打倒 3 个目标 |
+
+**皇家骑士**（本来就是究极体，不会进化；连击到 25、50、100 字时各送一个符合角色的道具，最多 3 个）：
+
+| 皇家骑士 | 价钱 | ♥ | 必杀 | 连击道具 |
+|---|---|---|---|---|
+| 奥米加兽 Omnimon | 3000 | 5 | 连续 6 字 → 打倒 4 个目标 | 💣 |
+| 阿尔法兽 Alphamon | 2800 | 5 | 连续 5 字 → 打倒 3 个目标 | 💣 |
+| 红莲骑士兽（真红模式）Gallantmon CM | 2500 | 5 | 连续 5 字 → 护盾 | 🛡️ |
+| 马格纳兽 Magnamon | 2500 | 6 | 连续 6 字 → 护盾 | 🛡️ |
+| 究极V龙兽 UlforceVeedramon | 2500 | 4 | 连续 5 字 → 病毒减速 8 秒 | ❄️ |
+| 帝皇龙骑兽 Examon | 2500 | 6 | 连续 8 字 → 打倒 5 个目标 | 💣 |
+| 天马骑士兽 Craniamon | 2200 | 6 | 连续 6 字 → 护盾 | 🛡️ |
+| 龙帝兽 Dynasmon | 2000 | 5 | 连续 4 字 → 打倒 2 个目标 | 💣 |
+| 公爵兽 Crusadermon | 2000 | 4 | 连续 6 字 → 冻结 6 秒 | ❄️ |
+| 斯雷普尼尔兽 Sleipmon | 2000 | 5 | 连续 6 字 → 冻结 6 秒 | ❄️ |
+| 杰斯兽 Jesmon | 2000 | 5 | 连续 5 字 → 打倒 3 个目标 | 💣 |
+| 豹骑兽 Leopardmon | 1800 | 5 | 连续 6 字 → 病毒减速 8 秒 | ❄️ |
+| 岩钢兽 Gankoomon | 1800 | 6 | 连续 2 字 → 打倒最近 1 个 | 💣 |
+
+- **敌人**：短字是 Numemon、DemiDevimon、Gazimon、Bakemon；中字是 Goblimon、Meramon、Snimon、Kuwagamon；长字是 Ogremon、Monochromon、DarkTyrannomon、Golemon、Seadramon。
+- **Boss**（按这个顺序解锁）：恶魔兽 Devimon、钢铁悟空兽 MetalEtemon、吸血魔兽 Myotismon、奇美拉兽 Kimeramon、魔王兽 Daemon、黑暗四天王（钢铁海龙兽、木偶兽、机械邪龙兽、小丑皇）、毒蛇吸血魔兽 VenomMyotismon、黑色战斗暴龙兽 BlackWarGreymon、别西卜兽 Beelzemon、魔龙兽 Megidramon、魔王吸血魔兽 MaloMyotismon、阿波卡利兽 Apocalymon。
 
 ### 等级、徽章、颜色和战场
 
@@ -258,7 +280,7 @@
 
 ### 好玩的小功能
 
-- **连击特效**：连续打对 10、25、50、100 字时，画面跳出大大的 **COMBO**，伙伴脚下出现光环，画面边缘亮起，背景音乐也会加速；到 25 字伙伴会进化。
+- **连击特效**：连续打对 10、25、50、100 字时，画面跳出大大的 **COMBO**，伙伴脚下出现光环，画面边缘亮起，背景音乐也会加速；到 25 字伙伴会进化（皇家骑士改送道具）。
 - **最后一击**：打倒 Boss 的瞬间进入慢动作，镜头冲向 Boss，然后大爆炸。
 - **错字复仇战**：打错的字会在下一次单人游戏变成金色 ⭐ 精英病毒，打倒可得**双倍分数和金币**。打倒后，这个字就会从复仇名单移除。
 - **中文释义**：打倒怪兽时会跳出那个字的中文意思，可以在基地按 **中文** 按钮关掉。结算画面的错字也会显示中文。

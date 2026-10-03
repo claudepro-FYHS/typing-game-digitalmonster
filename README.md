@@ -1,6 +1,6 @@
 # Digi Monster Typer
 
-An English typing game in an **HD pixel-art** style, inspired by digital-monster anime. Each student has a **partner monster**. Type the words on the virus monsters to attack and beat them — type well and your partner **evolves**! Every stage ends with a giant boss monster.
+An English typing game with cute chibi Digimon from the first three anime seasons. Each student has a **partner Digimon**. Type the words on the enemy Digimon to attack and beat them — type well and your partner **digivolves** to its Mega form! Every stage ends with a giant boss.
 Play solo, or team up with 2–4 classmates online and race each other for points.
 
 - **Play:** https://claudepro-fyhs.github.io/typing-game-digitalmonster/
@@ -20,9 +20,10 @@ Play solo, or team up with 2–4 classmates online and race each other for point
 | `words.js` | Word banks (11 banks, about 2,800 words, including **Digital World & Monsters**) | Only to add words (see below) |
 | `meanings.js` | Chinese meanings shown when a word is beaten | Only to add meanings for new words |
 | `apps-script/Code.gs` | The backend that you paste into Google Apps Script | No (just copy and paste it, following the steps) |
-| `models.js` | Pixel-art monsters, drawn in code: 15 partners (each with an evolved form), 13 virus monsters, 15 bosses + 17 festival bosses | No |
+| `models.js` | The monster list and how they move: 15 partners (each with a Mega form) + 13 Royal Knights, 13 enemies, 15 bosses + 17 festival bosses | No |
+| `art/` | The pictures (one SVG file per Digimon, made by `tools/art/`) | No |
 | `js/` | Game code (solo, multiplayer, levels and badges, leaderboard, teacher dashboard) | No |
-| `lib/` | Three.js (3D/pixel engine) and PeerJS (multiplayer), both MIT-licensed | No |
+| `lib/` | Three.js (3D engine) and PeerJS (multiplayer), both MIT-licensed | No |
 | `tests/` | Automatic tests (backend and browser) | No |
 | `CLAUDE.md` | Developer guide: how the code works, how to run the tests, how to make a new game from this one | No |
 
@@ -131,7 +132,7 @@ Everything is changed in the Google Sheet. **You don't need to touch GitHub.** C
 ### Admins (Admins tab)
 
 - Put an email in column A (for example your own `xxx@foonyew.edu.my`) and `YES` in column B.
-- Admins see their coins as **∞** and can use all 15 partners right away.
+- Admins see their coins as **∞** and can use all 28 partners right away.
 - Admin games are recorded in the Scores tab but **never appear on the leaderboard or the teacher dashboard**, so they don't affect student data.
 - When an admin fills in their profile, they can choose **STAFF** as their class.
 - To remove an admin, change column B to `NO` or delete the row.
@@ -157,24 +158,24 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 | Festival | ID | When (Malaysia time) | Festival boss |
 |---|---|---|---|
-| 🧧 Chinese New Year | `cny` | **all of January and February** | Golden Dragon |
-| 🏮 Lantern Festival (元宵) | `lantern` | 15th day of the 1st lunar month, ±7 days | Lantern Titan |
+| 🧧 Chinese New Year | `cny` | **all of January and February** | Azulongmon |
+| 🏮 Lantern Festival (元宵) | `lantern` | 15th day of the 1st lunar month, ±7 days | Zhuqiaomon |
 | 🌿 Qingming (清明) | `qingming` | about 4–5 April, ±7 days | *(no special boss — normal bosses)* |
-| 🐉 Dragon Boat (端午) | `dragonboat` | 5th day of the 5th lunar month, ±7 days | Dragon Boat Dreadnought |
-| 🌌 Qixi (七夕) | `qixi` | 7th day of the 7th lunar month, ±7 days | Magpie Bridge |
-| 🥮 Mid-Autumn (中秋) | `midautumn` | 15th day of the 8th lunar month, ±7 days | Jade Rabbit Moon |
-| ⛰️ Double Ninth (重阳) | `doubleninth` | 9th day of the 9th lunar month, ±7 days | Mountain Fortress |
-| 🍡 Winter Solstice (冬至) | `solstice` | about 21–22 December, ±7 days | Tangyuan Titan |
-| 🎆 New Year's Day | `newyear` | 1 January, ±7 days | Countdown Tower |
-| 💝 Valentine's Day | `valentine` | 14 February, ±7 days | Heart Seraph |
-| 🤡 April Fools' Day | `aprilfools` | 1 April, ±7 days | Prank Jester |
-| 🥚 Easter | `easter` | Easter Sunday, ±7 days | Egg Mothership |
-| 💐 Mother's Day | `mothersday` | 2nd Sunday of May, ±7 days | Guardian Goddess |
-| 👔 Father's Day | `fathersday` | 3rd Sunday of June, ±7 days | Iron Guardian |
-| 🎃 Halloween | `halloween` | 31 October, ±7 days | Pumpkin Phantom |
-| 🎄 Christmas | `christmas` | 25 December, ±7 days | Tannenbaum Titan |
-| 🌺 Merdeka Day | `merdeka` | 31 August, ±7 days | Hornbill Guardian |
-| 🎓 School anniversary | `anniversary` | **you type the dates** in the Events tab | Centennial Titan |
+| 🐉 Dragon Boat (端午) | `dragonboat` | 5th day of the 5th lunar month, ±7 days | MegaSeadramon |
+| 🌌 Qixi (七夕) | `qixi` | 7th day of the 7th lunar month, ±7 days | Sinduramon |
+| 🥮 Mid-Autumn (中秋) | `midautumn` | 15th day of the 8th lunar month, ±7 days | Antylamon |
+| ⛰️ Double Ninth (重阳) | `doubleninth` | 9th day of the 9th lunar month, ±7 days | Ebonwumon |
+| 🍡 Winter Solstice (冬至) | `solstice` | about 21–22 December, ±7 days | IceDevimon |
+| 🎆 New Year's Day | `newyear` | 1 January, ±7 days | Diaboromon |
+| 💝 Valentine's Day | `valentine` | 14 February, ±7 days | LadyDevimon |
+| 🤡 April Fools' Day | `aprilfools` | 1 April, ±7 days | Etemon |
+| 🥚 Easter | `easter` | Easter Sunday, ±7 days | Digitamamon |
+| 💐 Mother's Day | `mothersday` | 2nd Sunday of May, ±7 days | Mother D-Reaper |
+| 👔 Father's Day | `fathersday` | 3rd Sunday of June, ±7 days | Leomon |
+| 🎃 Halloween | `halloween` | 31 October, ±7 days | Pumpkinmon |
+| 🎄 Christmas | `christmas` | 25 December, ±7 days | Cherrymon |
+| 🌺 Merdeka Day | `merdeka` | 31 August, ±7 days | Parrotmon |
+| 🎓 School anniversary | `anniversary` | **you type the dates** in the Events tab | Baihumon |
 
 - Every festival lasts from **one week before to one week after** its day (Chinese New Year: the whole of January and February).
 - **When two festivals overlap**: the festival whose day is *today* wins; otherwise the **shorter** event wins (so Valentine's Day and the Lantern Festival show up even inside the Chinese New Year months).
@@ -222,30 +223,51 @@ The game has **18 festival events** and switches them on by itself — you don't
   - `1`: 💣 clear the screen
   - `2`: ❄️ freeze viruses for 5 seconds
   - `3`: 🛡️ shield (blocks one hit)
-- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves while you keep a **combo of 25+ words** (this is just for looks).
+- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves while you keep a **combo of 25+ words** (this is just for looks). The 13 **Royal Knights** are already Mega and don't evolve: at a combo of 25, 50 and 100 they give you an item instead.
 - Partners just play differently. A more expensive partner is **not** simply stronger:
   - Every partner has 4–6 ♥
   - Partners with more ♥ earn fewer coins
   - Coins only buy partners and colors, never items
-- All monsters are **original pixel-art designs** inspired by digital-monster anime (no official characters are used):
+- The partners are the 15 heroes of *Digimon Adventure*, *Adventure 02* and *Tamers*; in battle they stand on the left and the enemies come from the upper right. All pictures are fan-made chibi drawings for classroom use (Digimon belongs to Bandai / Toei Animation):
 
-| Partner → evolved form | Type | Price | ♥ | Features |
+| Partner → Mega form | Type | Price | ♥ | Features |
 |---|---|---|---|---|
-| EMBER → BLAZEREX | Fire dragon | Free | 5 | Balanced; starts every stage with a shield |
-| FROSTPUP → GLACIWOLF | Ice beast | 300 | 4 | Coins +20% |
-| SPROUTLING → THORNGUARD | Plant | 300 | 5 | Items drop ×1.6; coins −10% |
-| ZAPBEETLE → VOLTHORN | Insect | 400 | 5 | Special: 3 words in a row → beats the closest target |
-| SKYCHICK → STORMHAWK | Bird | 400 | 4 | Boss attacks 25% slower; coins +10% |
-| TIDESEAL → ICEWALRUS | Sea | 600 | 5 | Special: 5 in a row → freezes viruses for 4 s |
-| ROCKBUN → BOULDERON | Stone | 600 | 6 | Special: 6 in a row → beats 2 targets; coins −20% |
-| SHADOWKIT → NIGHTPANTHER | Shadow cat | 800 | 4 | Special: 5 in a row → viruses at half speed for 6 s |
-| FLAREFOX → INFERNO KITSUNE | Fire fox | 900 | 5 | Special: 8 in a row → fox fire storm beats 5 targets |
-| HALOBUN → SERAPHARE | Holy beast | 900 | 5 | Special: 5 in a row → gives you a shield |
-| PUCKIMP → INFERNIMP | Little devil | 1000 | 5 | Coins +10%; special: 3 in a row → beats the closest target |
-| UNIHORN → PRISM UNICORN | Holy beast | 1000 | 5 | Special: 6 in a row → viruses slow down for 8 s |
-| MECHAPUP → CYBERHOUND | Machine | 1100 | 5 | Special: 7 in a row → beats 4 targets |
-| SPARKSPRITE → STARFAIRY | Star fairy | 1100 | 5 | Special: 6 in a row → freezes viruses for 6 s; items ×1.2 |
-| DRAKELING → SKYDRAKE | Dragon | 1200 | 4 | Special: 5 in a row → dragon breath beats 3 targets |
+| Agumon → WarGreymon | Vaccine · Reptile | Free | 5 | Balanced; starts every stage with a shield |
+| Gabumon → MetalGarurumon | Data · Reptile | 300 | 4 | Coins +20% |
+| Palmon → Rosemon | Data · Plant | 300 | 5 | Items drop ×1.6; coins −10% |
+| Tentomon → HerculesKabuterimon | Vaccine · Insect | 400 | 5 | Special: 3 words in a row → beats the closest target |
+| Biyomon → Phoenixmon | Vaccine · Bird | 400 | 4 | Boss attacks 25% slower; coins +10% |
+| Gomamon → Vikemon | Vaccine · Sea animal | 600 | 5 | Special: 5 in a row → freezes viruses for 4 s |
+| Armadillomon → Shakkoumon | Free · Mammal | 600 | 6 | Special: 6 in a row → beats 2 targets; coins −20% |
+| Gatomon → Ophanimon | Vaccine · Holy beast | 800 | 4 | Special: 5 in a row → viruses at half speed for 6 s |
+| Terriermon → MegaGargomon | Vaccine · Beast | 900 | 5 | Special: 8 in a row → beats 5 targets |
+| Patamon → Seraphimon | Data · Mammal | 900 | 5 | Special: 5 in a row → gives you a shield |
+| Veemon → Imperialdramon | Free · Dragon | 1000 | 5 | Coins +10%; special: 3 in a row → beats the closest target |
+| Renamon → Sakuyamon | Data · Beast | 1000 | 5 | Special: 6 in a row → viruses slow down for 8 s |
+| Guilmon → Gallantmon | Virus · Reptile | 1100 | 5 | Special: 7 in a row → beats 4 targets |
+| Wormmon → GrandisKuwagamon | Free · Insect | 1100 | 5 | Special: 6 in a row → freezes viruses for 6 s; items ×1.2 |
+| Hawkmon → Valdurmon | Data · Bird | 1200 | 4 | Special: 5 in a row → beats 3 targets |
+
+**Royal Knights** (already Mega, so they do not evolve; a combo of 25, 50 and 100 words gives them their item, up to 3):
+
+| Royal Knight | Price | ♥ | Special | Combo item |
+|---|---|---|---|---|
+| Omnimon | 3000 | 5 | 6 in a row → beats 4 targets | 💣 |
+| Alphamon | 2800 | 5 | 5 in a row → beats 3 targets | 💣 |
+| Gallantmon Crimson Mode | 2500 | 5 | 5 in a row → shield | 🛡️ |
+| Magnamon | 2500 | 6 | 6 in a row → shield | 🛡️ |
+| UlforceVeedramon | 2500 | 4 | 5 in a row → viruses slow down for 8 s | ❄️ |
+| Examon | 2500 | 6 | 8 in a row → beats 5 targets | 💣 |
+| Craniamon | 2200 | 6 | 6 in a row → shield | 🛡️ |
+| Dynasmon | 2000 | 5 | 4 in a row → beats 2 targets | 💣 |
+| Crusadermon | 2000 | 4 | 6 in a row → freezes viruses for 6 s | ❄️ |
+| Sleipmon | 2000 | 5 | 6 in a row → freezes viruses for 6 s | ❄️ |
+| Jesmon | 2000 | 5 | 5 in a row → beats 3 targets | 💣 |
+| Leopardmon | 1800 | 5 | 6 in a row → viruses slow down for 8 s | ❄️ |
+| Gankoomon | 1800 | 6 | 2 in a row → beats the closest target | 💣 |
+
+- **Enemies:** Numemon, DemiDevimon, Gazimon, Bakemon (short words); Goblimon, Meramon, Snimon, Kuwagamon (medium); Ogremon, Monochromon, DarkTyrannomon, Golemon, Seadramon (long words).
+- **Bosses** (unlocked in this order): Devimon, MetalEtemon, Myotismon, Kimeramon, Daemon, the Dark Masters (MetalSeadramon, Puppetmon, Machinedramon, Piedmon), VenomMyotismon, BlackWarGreymon, Beelzemon, Megidramon, MaloMyotismon and Apocalymon.
 
 ### Levels, badges, colors and battlefields
 
@@ -258,7 +280,7 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ### Fun extras
 
-- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 25 your partner evolves.
+- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 25 your partner evolves (Royal Knights give an item instead).
 - **Final blow:** when a boss goes down, the game switches to slow motion and the camera rushes in before the big explosion.
 - **Revenge viruses:** words you mistyped come back in your next solo game as golden ⭐ viruses worth **double points and coins**. Beat one and that word leaves your revenge list.
 - **Chinese meanings:** when a word is beaten, its Chinese meaning pops up (switch it off with the **中文** button at the base). Mistyped words on the results screen show their meanings too.

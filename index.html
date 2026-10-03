@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Digi Monster Typer</title>
-<meta name="description" content="An HD pixel-art monster typing game for English vocabulary practice.">
+<meta name="description" content="A cute Digimon typing game for English vocabulary practice.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cpath d='M4 2h8v1h1v1h1v6h-1v2h-1v1h1v2H3v-2h1v-1H3v-2H2V4h1V3h1z' fill='%23ff8a1e'/%3E%3Cpath d='M5 5h2v3H5zM9 5h2v3H9z' fill='%23fff'/%3E%3Cpath d='M6 6h1v2H6zM10 6h1v2h-1z' fill='%231a1030'/%3E%3Cpath d='M6 10h4v1H6z' fill='%231a1030'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,8 +90,8 @@ p { line-height: 1.5; }
 #scr-login .card { max-width: 460px; width: 100%; text-align: center; }
 .title-cn, .title-jp { font-size: 22px; font-weight: 900; color: var(--gold); letter-spacing: 2px; white-space: nowrap; text-shadow: 2px 2px 0 #4a2a00; margin: 0; }.title-en { font-family: var(--head); font-weight: 700; font-size: 34px; letter-spacing: 3px; margin: 4px 0 12px; color: var(--accent); text-shadow: 3px 3px 0 #1a1050; }
 .login-art { display: flex; justify-content: center; align-items: flex-end; gap: 6px; margin: 0 0 8px; min-height: 64px; }
-.login-art img { height: 70px; }
-.login-art img.big { height: 96px; }
+.login-art img { height: 62px; max-width: 19%; object-fit: contain; }
+.login-art img.big { height: 90px; max-width: 24%; }
 #gsi-btn { display: flex; justify-content: center; min-height: 44px; margin: 10px 0; }
 .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 14px 0; }
 .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
@@ -358,7 +358,7 @@ body.slowed #freeze-veil { display: block; background: rgba(120,255,170,.08); bo
     <form class="card" id="profile-form" autocomplete="off">
       <h2>TAMER REGISTRATION</h2>
       <p class="small muted" id="profile-email"></p>
-      <p class="note" id="profile-newyear" style="display:none">🎒 <b>New school year!</b> Please choose your new class and seat number. Your coins, mechs and level are kept.</p>
+      <p class="note" id="profile-newyear" style="display:none">🎒 <b>New school year!</b> Please choose your new class and seat number. Your coins, partners and level are kept.</p>
       <div class="row" id="pf-school-row">
         <div class="field"><label for="pf-grade">Form</label><select id="pf-grade"></select></div>
         <div class="field" id="pf-classno-field"><label for="pf-classno">Class</label><select id="pf-classno"></select></div>

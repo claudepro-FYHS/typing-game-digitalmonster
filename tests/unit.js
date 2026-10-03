@@ -62,9 +62,10 @@ sheets.Admins.data.push(['Teacher@foonyew.edu.my', 'YES', 'me']);
 let ta = post({ action: 'login', idToken: 'fake:teacher@foonyew.edu.my' });
 assert(ta.ok && ta.admin === true && ta.player === null, JSON.stringify(ta));
 r = post({ action: 'saveProfile', token: ta.token, cls: 'STAFF', seat: '1', name: 'Cikgu', nickname: 'Sensei' });
-assert(r.ok && r.player.admin && r.player.coins === 999999 && r.player.owned.length === 15, JSON.stringify(r));
+assert(r.ok && r.player.admin && r.player.coins === 999999 && r.player.owned.length === 28, JSON.stringify(r));
 r = post({ action: 'saveProfile', token: tok, cls: 'STAFF', seat: '3', name: 'Tan Ah Kow', nickname: 'Hero' }); assert.equal(r.error, 'bad_class'); // students can't pick STAFF
 r = post({ action: 'buyMech', token: ta.token, mech: 'drakeling' }); assert(r.ok && r.player.selected === 'drakeling' && r.player.coins === 999999);
+r = post({ action: 'buyMech', token: ta.token, mech: 'omnimon' }); assert(r.ok && r.player.selected === 'omnimon', 'Royal Knights can be bought');
 r = post({ action: 'submitScore', token: ta.token, result: res(99, 99, 'Normal', [], 50) }); assert(r.ok);
 let lb2 = JSON.parse(ctx.doGet({ parameter: { action: 'leaderboard' } }).content);
 assert(!JSON.stringify(lb2).includes('Sensei'), 'admin on leaderboard');

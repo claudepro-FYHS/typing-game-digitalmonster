@@ -247,8 +247,8 @@ function isOutsider() { return isSchool() && !String(S.session.email || "").toLo
 function clsLabel(c) { return c === "OTHER" ? "🌐" : c; }
 function renderLoginHint() {
   $("#login-hint").innerHTML = S.remote.allowOthers
-    ? `Sign in with Google to save your scores, coins and mechs. Foon Yew students: please use your <b>@${esc(schoolDomain())}</b> account.`
-    : `Sign in with your <b>@${esc(schoolDomain())}</b> account to save your scores, coins and mechs.`;
+    ? `Sign in with Google to save your scores, coins and partners. Foon Yew students: please use your <b>@${esc(schoolDomain())}</b> account.`
+    : `Sign in with your <b>@${esc(schoolDomain())}</b> account to save your scores, coins and partners.`;
 }
 // junior classes get a 2-digit number (J105), senior classes don't (S2AC3) — same rule as Code.gs classCode_
 function classCode(grade, n) { return grade + (grade[0] === "J" && n < 10 ? "0" + n : String(n)); }

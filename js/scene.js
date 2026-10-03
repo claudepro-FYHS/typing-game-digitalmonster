@@ -9,7 +9,7 @@ const V3 = THREE.Vector3;
 const canvas = $("#scene");
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
 } catch (e) {
   document.body.insertAdjacentHTML("beforeend", '<div class="note" style="position:fixed;bottom:10px;left:10px;right:10px;z-index:99">This browser cannot show 3D graphics (WebGL is off). Please try Chrome or Edge.</div>');
 }
@@ -315,12 +315,12 @@ function setEnvironment(id, eventId) {
   setSky(E.sky[0], E.sky[1], E.sky[2]);
   scene.fog.color.set(E.fog);
   hemi.color.set(E.hemi[0]); hemi.groundColor.set(E.hemi[1]);
-  // ground: 32x32 pixel tile repeated; the texture scrolls to make the world move
+  // ground: one 128x128 tile repeated; the texture scrolls to make the world move
   const [base, spots, grid, gridCol] = E.tile;
   const gt = canTex(tileCanvas(base, spots, grid, gridCol), [600 / TILE, 520 / TILE]);
   envGround = new THREE.Mesh(new THREE.PlaneGeometry(600, 520), new THREE.MeshBasicMaterial({ map: gt }));
   envGround.rotation.x = -Math.PI / 2; envGround.position.set(0, 0, -240); envGroup.add(envGround);
-  if (E.sea) { // a strip of pixel sea toward the horizon
+  if (E.sea) { // a strip of sea toward the horizon
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 300), new THREE.MeshBasicMaterial({ map: canTex(tileCanvas("#2a9ae0", [["#5ac0f0", 40, 3, 1], ["#ffffff", 8, 2, 1]], false), [900 / TILE, 300 / TILE]) }));
     sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.05, -420); envGroup.add(sea); envGround.userData.sea = sea;
   }

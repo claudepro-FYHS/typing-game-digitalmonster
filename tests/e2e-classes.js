@@ -78,7 +78,7 @@ async function playSome(page, seconds) {
   await o.click('#btn-profile-save'); await sleep(1500);
   check(await o.evaluate(() => __DMT.S.currentScreen) === 'scr-hangar', 'outsider saved -> hangar');
   check((await o.textContent('#userchip')).includes('🌐'), 'outsider chip shows 🌐');
-  console.log('  upload:', await playSome(o, 30));
+  console.log('  upload:', await playSome(o, 38));
   const coins = await o.evaluate(() => __DMT.S.session.player.coins);
   await login(o, 'pal@gmail.com');
   check(await o.evaluate(() => __DMT.S.session.player.coins) === coins && coins > 0, 'outsider coins kept after signing in again: ' + coins);
