@@ -537,7 +537,7 @@ function update(dt) {
       b.enter = Math.min(1, b.enter + dt / 2.5);
       b.attack = Math.max(0, b.attack - dt * 1.5);
       const e = b.enter, m = t.mesh;
-      m.position.set(Math.sin(G.time * 0.5) * 6 * e, 9 + Math.sin(G.time * 1.3) * 0.8, -150 + (150 - 58) * (1 - Math.pow(1 - e, 3)));
+      m.position.set(Math.sin(G.time * 0.5) * 6 * e, 11 + Math.sin(G.time * 1.3) * 0.8, -150 + (150 - 58) * (1 - Math.pow(1 - e, 3)));
       MODELS.animateBoss(m, dt, G.time, b.attack, chest);
       t.pos.copy(m.position).add(new V3(0, m.userData.top, 0));
       continue;
