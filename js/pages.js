@@ -2,7 +2,7 @@
 /* =====================================================================
  *  LEADERBOARD
  * ===================================================================== */
-let lbData = null, lbDiff = "Normal";
+let lbData = null, lbDiff = "Normal", cbGroup = "J";
 async function loadLeaderboard(force) {
   const body = $("#lb-body");
   if (!CFG.APPS_SCRIPT_URL) { body.innerHTML = '<p class="muted">The leaderboard is not set up yet.</p>'; return; }
@@ -20,22 +20,30 @@ function renderLeaderboard() {
   $("#lb-note").textContent = `Only nicknames are shown. Ranked by typing speed (WPM); accuracy must be at least ${lbData.minAccuracy}%. The week starts on Monday.`;
   const board = (lbData.boards || {})[lbDiff] || { week: [], all: [] };
   const table = (title, rows) => `<div class="card"><h3>${title}</h3>${rows.length ? `<table><thead><tr><th>#</th><th>Nickname</th><th class="num">WPM</th><th class="num">Accuracy</th><th class="num">Date</th></tr></thead><tbody>` +
-    rows.map((r, i) => `<tr><td class="rank r${i + 1}">${i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</td><td class="nick">${esc(r.nickname)}${r.level ? ` <span class="lv small">LV${r.level}</span>` : ""}${r.title && BADGE_BY_ID[r.title] ? `<span class="title-chip">${BADGE_BY_ID[r.title].icon} ${esc(BADGE_BY_ID[r.title].name)}</span>` : ""}</td><td class="num"><b>${r.wpm}</b></td><td class="num">${r.acc}%</td><td class="num muted">${fmtDate(r.time)}</td></tr>`).join("") +
+    rows.map((r, i) => `<tr><td class="rank r${i + 1}">${i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</td><td class="nick">${esc(r.nickname)}${r.ext ? ' <span class="small" title="Player from outside the school">🌐</span>' : ""}${r.level ? ` <span class="lv small">LV${r.level}</span>` : ""}${r.title && BADGE_BY_ID[r.title] ? `<span class="title-chip">${BADGE_BY_ID[r.title].icon} ${esc(BADGE_BY_ID[r.title].name)}</span>` : ""}</td><td class="num"><b>${r.wpm}</b></td><td class="num">${r.acc}%</td><td class="num muted">${fmtDate(r.time)}</td></tr>`).join("") +
     `</tbody></table>` : '<p class="muted">No scores yet — be the first!</p>'}</div>`;
   $("#lb-body").innerHTML = table("THIS WEEK", board.week) + table("ALL TIME", board.all);
 }
+const CB_GROUPS = { J: { name: "JUNIOR", key: "junior" }, S: { name: "SENIOR", key: "senior" }, "": { name: "WHOLE SCHOOL", key: "all" } };
 function renderClassBattle() {
   const cb = lbData.classBattle || { week: [] };
-  const rows = cb.week || [];
+  // classes that have played get a bar; the rest are listed in one line so the board stays short
+  const inGroup = (cb.week || []).filter(r => !cbGroup || r.cls[0] === cbGroup);
+  const rows = inGroup.filter(r => r.kills > 0), idle = inGroup.filter(r => r.kills === 0).map(r => r.cls);
   const max = Math.max(1, ...rows.map(r => r.kills));
+  const grp = CB_GROUPS[cbGroup], champ = (cb.champions || {})[grp.key] || (cbGroup ? null : cb.lastChampion);
   $("#lb-note").textContent = "Class Battle: every virus beaten this week (solo and multiplayer) counts for your class. The week starts on Monday.";
-  $("#lb-body").innerHTML = `<div class="card" style="grid-column:1/-1"><h3>⚔️ CLASS BATTLE — THIS WEEK</h3>
-    ${cb.lastChampion ? `<p class="small">👑 Last week's champion: <b class="lv">${esc(cb.lastChampion.cls)}</b> with ${cb.lastChampion.kills} viruses beaten</p>` : ""}
+  $("#lb-body").innerHTML = `<div class="card" style="grid-column:1/-1">
+    <div class="seg" id="cb-seg" style="margin-bottom:10px">${Object.entries(CB_GROUPS).map(([k, g]) => `<button data-g="${k}" class="${k === cbGroup ? "active" : ""}">${g.name}</button>`).join("")}</div>
+    <h3>⚔️ CLASS BATTLE (${grp.name}) — THIS WEEK</h3>
+    ${champ ? `<p class="small">👑 Last week's champion: <b class="lv">${esc(champ.cls)}</b> with ${champ.kills} viruses beaten</p>` : ""}
     ${rows.length ? rows.map((r, i) => `<div class="cb-row" title="${esc(r.cls)}: ${r.kills} viruses beaten by ${r.pilots} tamers in ${r.games} games">
-      <span class="rank ${r.kills > 0 ? "r" + (i + 1) : ""}">${r.kills > 0 && i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span><span class="cls">${esc(r.cls)}</span>
+      <span class="rank r${i + 1}">${i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span><span class="cls">${esc(r.cls)}</span>
       <div class="track"><div class="fill" style="width:${(100 * r.kills / max).toFixed(1)}%"></div></div>
       <span class="num small"><b>${r.kills}</b> viruses · ${r.pilots} 👤</span></div>`).join("") : '<p class="muted">No battles yet this week — be the first!</p>'}
+    ${idle.length && cbGroup ? `<p class="small muted" style="margin-top:12px">Not started yet this week: ${idle.map(esc).join(" · ")}</p>` : ""}
   </div>`;
+  $$("#cb-seg button").forEach(b => b.onclick = () => { cbGroup = b.dataset.g; renderClassBattle(); });
 }
 $$("#lb-seg button").forEach(b => b.onclick = () => { lbDiff = b.dataset.d; if (lbData) renderLeaderboard(); });
 $("#btn-lb-refresh").onclick = () => loadLeaderboard(true);
@@ -124,6 +132,8 @@ function renderTeacher() {
  * ===================================================================== */
 let last = performance.now();
 const camTarget = new V3();
+const CAM = { x: 13, y: 13, z: 13, tx: -6, ty: 2, tz: -30, // battle camera (landscape) ...
+  phone: { x: 4, y: 14, z: 22, tx: -1, ty: 5, tz: -34 } };   // ... and on a phone held upright
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -142,14 +152,15 @@ function frame(now) {
     if (G.slowmo > 0) G.slowmo = Math.max(0, G.slowmo - dt);
     if (!G.paused && !G.over) update(dt * slow);
     updateEffects(G.paused ? 0 : dt * slow);
-    // camera sits high behind the mechs so enemies stay visible above their heads
+    // diagonal side view: the partners stand lower-left facing right, enemies come from the upper-right
     const portrait = camera.aspect < 0.8, n = G.players.length;
-    camera.position.set(0, (portrait ? 7.6 : 6.3) + (n - 1) * 1.0, (portrait ? 17 : 12.5) + (n - 1) * (portrait ? 6 : 3.5));
+    const C = portrait ? CAM.phone : CAM;
+    camera.position.set(C.x + (n - 1) * (portrait ? 3 : 4), C.y + (n - 1) * 1.0, C.z + (n - 1) * (portrait ? 5 : 3));
     if (G.shake > 0) camera.position.add(new V3((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake, 0));
-    camTarget.set(0, portrait ? 5.2 : 4.4, -40);
+    camTarget.set(C.tx, C.ty, C.tz);
     if (G.slowmo > 0 && G.slowFocus) {
       const k = Math.sin(Math.min(1, (1.5 - G.slowmo) / 1.5) * Math.PI) * 0.55; // rush in and back out
-      camera.position.lerp(G.slowFocus.clone().add(new V3(0, 3, 32)), k);
+      camera.position.lerp(G.slowFocus.clone().add(new V3(18, 3, 26)), k);
       camTarget.lerp(G.slowFocus, k);
     }
     camera.lookAt(camTarget);
@@ -189,4 +200,4 @@ loadRemoteConfig().then(() => { if (S.currentScreen === "scr-login") showLogin()
 if (isSchool()) flushPending();
 window.addEventListener("online", flushPending);
 // test hook (used by automated tests only)
-window.__DMT = { G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };
+window.__DMT = { CAM, G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };

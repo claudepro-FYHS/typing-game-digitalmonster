@@ -1,28 +1,27 @@
-<!doctype html><html><head><meta charset="utf-8"><style>
-body{margin:0;background:#3a4068;color:#fff;font:12px sans-serif}
-#g{display:flex;flex-wrap:wrap;gap:6px;padding:8px;align-items:flex-end}
+<!doctype html><html><head><meta charset="utf-8"><base href="/"><style>
+body{margin:0;background:#4a5070;color:#fff;font:12px sans-serif}
+#g{display:flex;flex-wrap:wrap;gap:8px;padding:8px;align-items:flex-end}
 #g div{text-align:center}
-canvas{image-rendering:pixelated;display:block;margin:0 auto 2px}
+canvas{display:block;margin:0 auto 2px}
 </style></head>
 <body><div id="g"></div>
 <script src="/lib/three.min.js"></script><script src="/models.js"></script>
 <script>
-// Pixel-art gallery of every partner (rookie + evolved, front + back), enemy and boss.
-// ?set=mechs|mechs2|enemies|bosses|evbosses   &pose=back|atk (optional)
-const q = new URLSearchParams(location.search), set = q.get('set') || 'mechs', pose = q.get('pose') || '';
-const g = document.getElementById('g');
-function show(cv, label, s) {
-  const w = document.createElement('div'), c = document.createElement('canvas');
-  c.width = cv.width * s; c.height = cv.height * s;
-  const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(cv, 0, 0, c.width, c.height);
-  w.appendChild(c); w.append(label); g.appendChild(w);
-}
-const A = MODELS.__artCanvas, o = { back: pose === 'back', atk: pose === 'atk' };
-if (set === 'mechs' || set === 'mechs2') MODELS.MECHS.forEach((m, i) => {
-  if (set === 'mechs' ? i >= 8 : i < 8) return;
-  show(A('m', m, null, o), m.name, 4); show(A('m', m, null, Object.assign({ evo: 1 }, o)), m.evo, 4);
+// Gallery of every monster as the game draws it (models.js raster(): mirrored for enemies/bosses, skins).
+// ?set=partners|knights|enemies|bosses|evbosses|skins
+const q = new URLSearchParams(location.search), set = q.get('set') || 'partners';
+const g = document.getElementById('g'), items = [];
+function add(id, label, o) { items.push([MODELS.raster(id, Object.assign({ h: 150 }, o)), label]); }
+const M = MODELS.MECHS;
+if (set === 'partners') M.filter(m => !m.knight).forEach(m => { add(m.art, m.name); add(m.evoArt, m.evo); });
+if (set === 'knights') M.filter(m => m.knight).forEach(m => add(m.art, m.name + ' ' + m.comboItem));
+if (set === 'enemies') Object.entries(MODELS.ENEMY_TYPES).forEach(([k, e]) => add(k, e.name + ' (' + e.size + ')', { flip: true }));
+if (set === 'bosses' || set === 'evbosses') MODELS.BOSSES.forEach(b => { if ((set === 'bosses') === !!b.event) return; add(b.id, b.name + (b.event ? ' (' + b.event + ')' : ''), { flip: true, h: 200 }); });
+if (set === 'skins') { const skins = [{ id: 'desert', colors: { main: 0xd8b47a, sub: 0xa8845a, acc: 0x7a5a3a, belly: 0xf4e4c4 } }, { id: 'neon', colors: { main: 0x2a2850, sub: 0x00e5ff, acc: 0xff2bd6, belly: 0x4a4a7a } }, { id: 'gold', colors: { main: 0xf0c850, sub: 0xc89a2a, acc: 0xfff0a0, belly: 0xfff4c8 } }];
+  for (const m of [M[0], M[7], M[15]]) { add(m.art, m.name); for (const s of skins) add(m.art, s.id, { skin: s }); } }
+MODELS.artReady().then(() => {
+  for (const [cv, label] of items) { const w = document.createElement('div'); if (!cv.ver) label += ' ⚠ MISSING'; w.appendChild(cv); w.append(label); g.appendChild(w); }
+  window.missing = items.filter(([cv]) => !cv.ver).map(([, l]) => l);
+  window.done = true;
 });
-if (set === 'enemies') Object.entries(MODELS.ENEMY_TYPES).forEach(([k, e]) => { show(A('e', e, null, {}), k, 5); show(A('e', e, null, { atk: 1 }), k + ' (attack)', 5); });
-if (set === 'bosses' || set === 'evbosses') MODELS.BOSSES.forEach(b => { if ((set === 'bosses') === !!b.event) return; show(A('b', b, null, o), b.name + (b.event ? ' (' + b.event + ')' : ''), 3); });
-window.done = true;
 </script></body></html>

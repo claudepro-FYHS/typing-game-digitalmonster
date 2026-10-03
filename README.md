@@ -1,6 +1,6 @@
 # Digi Monster Typer
 
-An English typing game in an **HD pixel-art** style, inspired by digital-monster anime. Each student has a **partner monster**. Type the words on the virus monsters to attack and beat them — type well and your partner **evolves**! Every stage ends with a giant boss monster.
+An English typing game with cute chibi Digimon from the first three anime seasons. Each student has a **partner Digimon**. Type the words on the enemy Digimon to attack and beat them — type well and your partner **digivolves** to its Mega form! Every stage ends with a giant boss.
 Play solo, or team up with 2–4 classmates online and race each other for points.
 
 - **Play:** https://claudepro-fyhs.github.io/typing-game-digitalmonster/
@@ -20,9 +20,10 @@ Play solo, or team up with 2–4 classmates online and race each other for point
 | `words.js` | Word banks (11 banks, about 2,800 words, including **Digital World & Monsters**) | Only to add words (see below) |
 | `meanings.js` | Chinese meanings shown when a word is beaten | Only to add meanings for new words |
 | `apps-script/Code.gs` | The backend that you paste into Google Apps Script | No (just copy and paste it, following the steps) |
-| `models.js` | Pixel-art monsters, drawn in code: 15 partners (each with an evolved form), 13 virus monsters, 15 bosses + 17 festival bosses | No |
+| `models.js` | The monster list and how they move: 15 partners (each with a Mega form) + 13 Royal Knights, 13 enemies, 15 bosses + 17 festival bosses | No |
+| `art/` | The pictures (one SVG file per Digimon, made by `tools/art/`) | No |
 | `js/` | Game code (solo, multiplayer, levels and badges, leaderboard, teacher dashboard) | No |
-| `lib/` | Three.js (3D/pixel engine) and PeerJS (multiplayer), both MIT-licensed | No |
+| `lib/` | Three.js (3D engine) and PeerJS (multiplayer), both MIT-licensed | No |
 | `tests/` | Automatic tests (backend and browser) | No |
 | `CLAUDE.md` | Developer guide: how the code works, how to run the tests, how to make a new game from this one | No |
 
@@ -40,7 +41,7 @@ Play solo, or team up with 2–4 classmates online and race each other for point
 2. Search for **Google Auth Platform** in the top search bar and click **Get started**:
    - App name: `Digi Monster Typer`
    - Support email: choose your email
-   - Audience: choose **Internal**
+   - Audience: choose **External** (so students' personal Google accounts can sign in too; choose **Internal** if only school accounts should play)
    - Contact email: your email
    - Tick the agreement box, then click **Create**
 3. In the left menu choose **Clients**, then click **+ Create client**:
@@ -65,7 +66,8 @@ Play solo, or team up with 2–4 classmates online and race each other for point
    3. Click **Allow**.
    4. When the execution log shows `Setup done. 设置完成！`, it worked.
 6. Back in the spreadsheet you'll see seven new tabs: **Scores, Players, Settings, BannedWords, Admins, CoinGifts, Events**. In the **Settings** tab, edit column B:
-   - **Classes**: your classes, separated by commas, e.g. `1A, 1B, 1C, 2A, 2B`
+   - **ClassCounts**: how many classes each form has, e.g. `J1:12, J2:12, J3:12, S1AC:4, S1S:6, S2AC:4, S2S:6, S3AC:4, S3S:6`. **Change the numbers to the school's real class counts.** Students choose their form, then their class number.
+   - **AllowOtherAccounts**: `YES` lets non-school Google accounts play too (see "Players from outside the school" below); `NO` = school accounts only.
    - **TeacherPassword**: the teacher dashboard password. **Be sure to change** the default `change-me-2026`.
    - **GoogleClientId**: paste the Client ID from Step A
 7. Publish it as a web app: back in Apps Script, click **Deploy → New deployment** at the top right.
@@ -112,7 +114,9 @@ Everything is changed in the Google Sheet. **You don't need to touch GitHub.** C
 
 | What to change | Where |
 |---|---|
-| Class list | **Settings** tab → `Classes`, comma-separated |
+| Number of classes in each form | **Settings** tab → `ClassCounts`, e.g. `J1:12, S2AC:4` |
+| Let non-school Google accounts play | **Settings** tab → `AllowOtherAccounts` (`YES` / `NO`) |
+| Start the new school year early or late | **Settings** tab → `SchoolYear` (see below) |
 | Teacher dashboard password | **Settings** tab → `TeacherPassword` |
 | Minimum accuracy for the leaderboard | **Settings** tab → `LeaderboardMinAccuracy` (default 80) |
 | A student's inappropriate nickname | **Players** tab → edit the `Nickname` cell directly |
@@ -128,7 +132,7 @@ Everything is changed in the Google Sheet. **You don't need to touch GitHub.** C
 ### Admins (Admins tab)
 
 - Put an email in column A (for example your own `xxx@foonyew.edu.my`) and `YES` in column B.
-- Admins see their coins as **∞** and can use all 15 partners right away.
+- Admins see their coins as **∞** and can use all 28 partners right away.
 - Admin games are recorded in the Scores tab but **never appear on the leaderboard or the teacher dashboard**, so they don't affect student data.
 - When an admin fills in their profile, they can choose **STAFF** as their class.
 - To remove an admin, change column B to `NO` or delete the row.
@@ -140,10 +144,11 @@ Each row is one gift:
 | Column A: who | Column B: coins | Column C: note (anything) | Column D: filled in automatically, don't edit |
 |---|---|---|---|
 | `amy@foonyew.edu.my` | 200 | Contest winner | |
-| `2B` | 50 | Reward for class 2B | |
+| `J105` | 50 | Reward for class J105 | |
+| `S2` | 30 | Every S2 class (S2AC and S2S) | |
 | `ALL` | 100 | School holiday gift | |
 
-- Column A can be one student's email, a class (e.g. `2B`), or `ALL` (every student).
+- Column A can be one student's email, a class (e.g. `J105`), a form (`J1`, `S2`, `S2AC` …), or `ALL` (every school student; players from outside the school are not included).
 - Each student receives each gift only once. Next time they open the game they'll see "🎁 Your teacher sent you … coins!".
 - A negative number in column B takes coins away (never below 0).
 
@@ -153,24 +158,24 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 | Festival | ID | When (Malaysia time) | Festival boss |
 |---|---|---|---|
-| 🧧 Chinese New Year | `cny` | **all of January and February** | Golden Dragon |
-| 🏮 Lantern Festival (元宵) | `lantern` | 15th day of the 1st lunar month, ±7 days | Lantern Titan |
+| 🧧 Chinese New Year | `cny` | **all of January and February** | Azulongmon |
+| 🏮 Lantern Festival (元宵) | `lantern` | 15th day of the 1st lunar month, ±7 days | Zhuqiaomon |
 | 🌿 Qingming (清明) | `qingming` | about 4–5 April, ±7 days | *(no special boss — normal bosses)* |
-| 🐉 Dragon Boat (端午) | `dragonboat` | 5th day of the 5th lunar month, ±7 days | Dragon Boat Dreadnought |
-| 🌌 Qixi (七夕) | `qixi` | 7th day of the 7th lunar month, ±7 days | Magpie Bridge |
-| 🥮 Mid-Autumn (中秋) | `midautumn` | 15th day of the 8th lunar month, ±7 days | Jade Rabbit Moon |
-| ⛰️ Double Ninth (重阳) | `doubleninth` | 9th day of the 9th lunar month, ±7 days | Mountain Fortress |
-| 🍡 Winter Solstice (冬至) | `solstice` | about 21–22 December, ±7 days | Tangyuan Titan |
-| 🎆 New Year's Day | `newyear` | 1 January, ±7 days | Countdown Tower |
-| 💝 Valentine's Day | `valentine` | 14 February, ±7 days | Heart Seraph |
-| 🤡 April Fools' Day | `aprilfools` | 1 April, ±7 days | Prank Jester |
-| 🥚 Easter | `easter` | Easter Sunday, ±7 days | Egg Mothership |
-| 💐 Mother's Day | `mothersday` | 2nd Sunday of May, ±7 days | Guardian Goddess |
-| 👔 Father's Day | `fathersday` | 3rd Sunday of June, ±7 days | Iron Guardian |
-| 🎃 Halloween | `halloween` | 31 October, ±7 days | Pumpkin Phantom |
-| 🎄 Christmas | `christmas` | 25 December, ±7 days | Tannenbaum Titan |
-| 🌺 Merdeka Day | `merdeka` | 31 August, ±7 days | Hornbill Guardian |
-| 🎓 School anniversary | `anniversary` | **you type the dates** in the Events tab | Centennial Titan |
+| 🐉 Dragon Boat (端午) | `dragonboat` | 5th day of the 5th lunar month, ±7 days | MegaSeadramon |
+| 🌌 Qixi (七夕) | `qixi` | 7th day of the 7th lunar month, ±7 days | Sinduramon |
+| 🥮 Mid-Autumn (中秋) | `midautumn` | 15th day of the 8th lunar month, ±7 days | Antylamon |
+| ⛰️ Double Ninth (重阳) | `doubleninth` | 9th day of the 9th lunar month, ±7 days | Ebonwumon |
+| 🍡 Winter Solstice (冬至) | `solstice` | about 21–22 December, ±7 days | IceDevimon |
+| 🎆 New Year's Day | `newyear` | 1 January, ±7 days | Diaboromon |
+| 💝 Valentine's Day | `valentine` | 14 February, ±7 days | LadyDevimon |
+| 🤡 April Fools' Day | `aprilfools` | 1 April, ±7 days | Etemon |
+| 🥚 Easter | `easter` | Easter Sunday, ±7 days | Digitamamon |
+| 💐 Mother's Day | `mothersday` | 2nd Sunday of May, ±7 days | Mother D-Reaper |
+| 👔 Father's Day | `fathersday` | 3rd Sunday of June, ±7 days | Leomon |
+| 🎃 Halloween | `halloween` | 31 October, ±7 days | Pumpkinmon |
+| 🎄 Christmas | `christmas` | 25 December, ±7 days | Cherrymon |
+| 🌺 Merdeka Day | `merdeka` | 31 August, ±7 days | Parrotmon |
+| 🎓 School anniversary | `anniversary` | **you type the dates** in the Events tab | Baihumon |
 
 - Every festival lasts from **one week before to one week after** its day (Chinese New Year: the whole of January and February).
 - **When two festivals overlap**: the festival whose day is *today* wins; otherwise the **shorter** event wins (so Valentine's Day and the Lantern Festival show up even inside the Chinese New Year months).
@@ -218,30 +223,51 @@ The game has **18 festival events** and switches them on by itself — you don't
   - `1`: 💣 clear the screen
   - `2`: ❄️ freeze viruses for 5 seconds
   - `3`: 🛡️ shield (blocks one hit)
-- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves while you keep a **combo of 25+ words** (this is just for looks).
+- **Evolution:** many partners have a **special move**: type several words in a row without a mistake, then press `Space` (the 🧬 at the bottom shows your progress). Your partner **evolves** into its bigger form and attacks. Every partner also evolves while you keep a **combo of 25+ words** (this is just for looks). The 13 **Royal Knights** are already Mega and don't evolve: at a combo of 25, 50 and 100 they give you an item instead.
 - Partners just play differently. A more expensive partner is **not** simply stronger:
   - Every partner has 4–6 ♥
   - Partners with more ♥ earn fewer coins
   - Coins only buy partners and colors, never items
-- All monsters are **original pixel-art designs** inspired by digital-monster anime (no official characters are used):
+- The partners are the 15 heroes of *Digimon Adventure*, *Adventure 02* and *Tamers*; in battle they stand on the left and the enemies come from the upper right. All pictures are fan-made chibi drawings for classroom use (Digimon belongs to Bandai / Toei Animation):
 
-| Partner → evolved form | Type | Price | ♥ | Features |
+| Partner → Mega form | Type | Price | ♥ | Features |
 |---|---|---|---|---|
-| EMBER → BLAZEREX | Fire dragon | Free | 5 | Balanced; starts every stage with a shield |
-| FROSTPUP → GLACIWOLF | Ice beast | 300 | 4 | Coins +20% |
-| SPROUTLING → THORNGUARD | Plant | 300 | 5 | Items drop ×1.6; coins −10% |
-| ZAPBEETLE → VOLTHORN | Insect | 400 | 5 | Special: 3 words in a row → beats the closest target |
-| SKYCHICK → STORMHAWK | Bird | 400 | 4 | Boss attacks 25% slower; coins +10% |
-| TIDESEAL → ICEWALRUS | Sea | 600 | 5 | Special: 5 in a row → freezes viruses for 4 s |
-| ROCKBUN → BOULDERON | Stone | 600 | 6 | Special: 6 in a row → beats 2 targets; coins −20% |
-| SHADOWKIT → NIGHTPANTHER | Shadow cat | 800 | 4 | Special: 5 in a row → viruses at half speed for 6 s |
-| FLAREFOX → INFERNO KITSUNE | Fire fox | 900 | 5 | Special: 8 in a row → fox fire storm beats 5 targets |
-| HALOBUN → SERAPHARE | Holy beast | 900 | 5 | Special: 5 in a row → gives you a shield |
-| PUCKIMP → INFERNIMP | Little devil | 1000 | 5 | Coins +10%; special: 3 in a row → beats the closest target |
-| UNIHORN → PRISM UNICORN | Holy beast | 1000 | 5 | Special: 6 in a row → viruses slow down for 8 s |
-| MECHAPUP → CYBERHOUND | Machine | 1100 | 5 | Special: 7 in a row → beats 4 targets |
-| SPARKSPRITE → STARFAIRY | Star fairy | 1100 | 5 | Special: 6 in a row → freezes viruses for 6 s; items ×1.2 |
-| DRAKELING → SKYDRAKE | Dragon | 1200 | 4 | Special: 5 in a row → dragon breath beats 3 targets |
+| Agumon → WarGreymon | Vaccine · Reptile | Free | 5 | Balanced; starts every stage with a shield |
+| Gabumon → MetalGarurumon | Data · Reptile | 300 | 4 | Coins +20% |
+| Palmon → Rosemon | Data · Plant | 300 | 5 | Items drop ×1.6; coins −10% |
+| Tentomon → HerculesKabuterimon | Vaccine · Insect | 400 | 5 | Special: 3 words in a row → beats the closest target |
+| Biyomon → Phoenixmon | Vaccine · Bird | 400 | 4 | Boss attacks 25% slower; coins +10% |
+| Gomamon → Vikemon | Vaccine · Sea animal | 600 | 5 | Special: 5 in a row → freezes viruses for 4 s |
+| Armadillomon → Shakkoumon | Free · Mammal | 600 | 6 | Special: 6 in a row → beats 2 targets; coins −20% |
+| Gatomon → Ophanimon | Vaccine · Holy beast | 800 | 4 | Special: 5 in a row → viruses at half speed for 6 s |
+| Terriermon → MegaGargomon | Vaccine · Beast | 900 | 5 | Special: 8 in a row → beats 5 targets |
+| Patamon → Seraphimon | Data · Mammal | 900 | 5 | Special: 5 in a row → gives you a shield |
+| Veemon → Imperialdramon | Free · Dragon | 1000 | 5 | Coins +10%; special: 3 in a row → beats the closest target |
+| Renamon → Sakuyamon | Data · Beast | 1000 | 5 | Special: 6 in a row → viruses slow down for 8 s |
+| Guilmon → Gallantmon | Virus · Reptile | 1100 | 5 | Special: 7 in a row → beats 4 targets |
+| Wormmon → GrandisKuwagamon | Free · Insect | 1100 | 5 | Special: 6 in a row → freezes viruses for 6 s; items ×1.2 |
+| Hawkmon → Valdurmon | Data · Bird | 1200 | 4 | Special: 5 in a row → beats 3 targets |
+
+**Royal Knights** (already Mega, so they do not evolve; a combo of 25, 50 and 100 words gives them their item, up to 3):
+
+| Royal Knight | Price | ♥ | Special | Combo item |
+|---|---|---|---|---|
+| Omnimon | 3000 | 5 | 6 in a row → beats 4 targets | 💣 |
+| Alphamon | 2800 | 5 | 5 in a row → beats 3 targets | 💣 |
+| Gallantmon Crimson Mode | 2500 | 5 | 5 in a row → shield | 🛡️ |
+| Magnamon | 2500 | 6 | 6 in a row → shield | 🛡️ |
+| UlforceVeedramon | 2500 | 4 | 5 in a row → viruses slow down for 8 s | ❄️ |
+| Examon | 2500 | 6 | 8 in a row → beats 5 targets | 💣 |
+| Craniamon | 2200 | 6 | 6 in a row → shield | 🛡️ |
+| Dynasmon | 2000 | 5 | 4 in a row → beats 2 targets | 💣 |
+| Crusadermon | 2000 | 4 | 6 in a row → freezes viruses for 6 s | ❄️ |
+| Sleipmon | 2000 | 5 | 6 in a row → freezes viruses for 6 s | ❄️ |
+| Jesmon | 2000 | 5 | 5 in a row → beats 3 targets | 💣 |
+| Leopardmon | 1800 | 5 | 6 in a row → viruses slow down for 8 s | ❄️ |
+| Gankoomon | 1800 | 6 | 2 in a row → beats the closest target | 💣 |
+
+- **Enemies:** Numemon, DemiDevimon, Gazimon, Bakemon (short words); Goblimon, Meramon, Snimon, Kuwagamon (medium); Ogremon, Monochromon, DarkTyrannomon, Golemon, Seadramon (long words).
+- **Bosses** (unlocked in this order): Devimon, MetalEtemon, Myotismon, Kimeramon, Daemon, the Dark Masters (MetalSeadramon, Puppetmon, Machinedramon, Piedmon), VenomMyotismon, BlackWarGreymon, Beelzemon, Megidramon, MaloMyotismon and Apocalymon.
 
 ### Levels, badges, colors and battlefields
 
@@ -254,7 +280,7 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ### Fun extras
 
-- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 25 your partner evolves.
+- **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 25 your partner evolves (Royal Knights give an item instead).
 - **Final blow:** when a boss goes down, the game switches to slow motion and the camera rushes in before the big explosion.
 - **Revenge viruses:** words you mistyped come back in your next solo game as golden ⭐ viruses worth **double points and coins**. Beat one and that word leaves your revenge list.
 - **Chinese meanings:** when a word is beaten, its Chinese meaning pops up (switch it off with the **中文** button at the base). Mistyped words on the results screen show their meanings too.
@@ -290,7 +316,7 @@ The game has **18 festival events** and switches them on by itself — you don't
 - Words are drawn like cards from a deck: no word repeats until the whole word bank has been used.
 
 **Leaderboard**
-- **⚔️ Class Battle:** every virus beaten this week (solo and multiplayer) counts for the player's class. Classes are ranked by total kills, and last week's champion class is shown.
+- **⚔️ Class Battle:** every virus beaten this week (solo and multiplayer) counts for the player's class. Classes are ranked by total kills in three boards: **Junior** (J1–J3), **Senior** (S1–S3) and **Whole school**, each with last week's champion class.
 - Separate boards for each difficulty, each with "This week" and "All time".
 - Ranked by WPM; accuracy must be at least 80% to appear.
 - Solo games only; admins are not included.
@@ -304,11 +330,30 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ---
 
+## Classes, the new school year, and players from outside the school
+
+**Classes.** Students pick their **form** (J1, J2, J3, S1AC, S1S, S2AC, S2S, S3AC, S3S) and then their **class number**. The class is saved like this:
+- Junior classes have a 2-digit number: J1 class 5 → **`J105`**, J3 class 11 → **`J311`**
+- Senior classes don't: S2AC class 3 → **`S2AC3`**, S1S class 6 → **`S1S6`**
+
+The forms and how many classes each has come from `ClassCounts` in the **Settings** tab. If you add a new kind of form, just add it there (e.g. `S1X:2`).
+
+**New school year.** On **1 January** every year, each student is asked to choose their new class and seat number the next time they sign in. Their coins, partners, level and badges are kept. Old scores keep the class they had at the time. If your school year changes on another day, type the year into `SchoolYear` yourself (e.g. type `2027` on the day you want the change); leave it blank to switch automatically on 1 January.
+
+**Players from outside the school** (`AllowOtherAccounts` = `YES`):
+- Anyone with a Google account (e.g. Gmail) can sign in. Their coins, partners, level and badges are saved just like a student's.
+- They only choose a nickname (a name is optional). They don't choose a class or seat number. In the Players and Scores tabs their class is **`OTHER`**.
+- They appear on the leaderboard with a 🌐 next to their nickname. They are **not** counted in the Class Battle, and they are grouped under `OTHER` in the teacher dashboard.
+- For this to work, the Google Cloud sign-in must be set to **External** (Step A). If you chose **Internal** before: open https://console.cloud.google.com/ → **Google Auth Platform → Audience** → **Make external**, then make sure the publishing status is **In production** (click **Publish app** if it says *Testing*). The game only asks for name and email, so Google does not need to review the app.
+- Set `AllowOtherAccounts` to `NO` at any time: outside players can no longer sign in, and they disappear from the leaderboard (their data stays in the sheet).
+
+---
+
 ## Privacy and security
 
 - The teacher password is stored only in your Google Sheet and is checked by Apps Script. **It is not in the public web page code.**
 - The leaderboard sends out only nicknames, WPM, accuracy and dates. **Real names and emails are never sent.**
-- When a student signs in, Apps Script checks the sign-in token with Google and accepts scores only from `@foonyew.edu.my` accounts. Even someone who knows the backend URL can't submit scores pretending to be a student.
+- When a player signs in, Apps Script checks the sign-in token with Google, so nobody can submit scores pretending to be someone else, even if they know the backend URL. Only `@foonyew.edu.my` accounts can choose a class; other Google accounts are accepted only while `AllowOtherAccounts` is `YES`.
 - A student's sign-in is kept only in the current browser tab and ends when the browser is closed. School computers are shared, so please still remind students to click **Sign out** when they finish.
 - If a score can't be uploaded (for example, the network is down), the game still shows the result and keeps it on that computer. It is sent automatically the next time the game is opened, within 12 hours.
 

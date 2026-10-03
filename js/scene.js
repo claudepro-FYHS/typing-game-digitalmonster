@@ -1,8 +1,9 @@
 "use strict";
 /* =====================================================================
- *  THREE.JS SCENE: the "HD pixel" Digital World
- *  Pixel-art sprites (models.js) stand on a scrolling pixel-tile ground,
- *  with billboard pixel props, fog for depth, glow and square particles.
+ *  THREE.JS SCENE: the Digital World
+ *  Chibi monster sprites (models.js) stand on a scrolling ground with a
+ *  soft data grid, billboard props drawn in the same cartoon style, fog
+ *  for depth, glow and round sparkle particles.
  * ===================================================================== */
 const V3 = THREE.Vector3;
 const canvas = $("#scene");
@@ -16,32 +17,54 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
 scene.fog = new THREE.Fog(0x9ad8ff, 70, 230);
 function setSky(top, mid, bottom) {
-  const c = document.createElement("canvas"); c.width = 4; c.height = 64; // few rows = banded "pixel" gradient
-  const x = c.getContext("2d"), gr = x.createLinearGradient(0, 0, 0, 64);
+  const c = document.createElement("canvas"); c.width = 4; c.height = 256;
+  const x = c.getContext("2d"), gr = x.createLinearGradient(0, 0, 0, 256);
   gr.addColorStop(0, top); gr.addColorStop(0.55, mid); gr.addColorStop(1, bottom);
-  x.fillStyle = gr; x.fillRect(0, 0, 4, 64);
+  x.fillStyle = gr; x.fillRect(0, 0, 4, 256);
   if (scene.background && scene.background.dispose) scene.background.dispose();
-  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter;
-  scene.background = t;
+  scene.background = new THREE.CanvasTexture(c);
 }
 setSky("#3a8ee8", "#8fd0ff", "#d8f4ff");
 const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x3a5a3a, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(-6, 12, 8); scene.add(sun);
 
-function pixTex(cv, repeat) {
+function canTex(cv, repeat) {
   const t = new THREE.CanvasTexture(cv);
-  t.magFilter = THREE.NearestFilter;
   if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); t.minFilter = THREE.LinearMipmapLinearFilter; if (renderer) t.anisotropy = renderer.capabilities.getMaxAnisotropy(); }
   else { t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; }
   return t;
 }
-function artCv(w, h, draw, colors) { const d = new MODELS.PixelArt(w, h); draw(d, colors || {}); return d.render(); }
+/* cartoon drawing helpers (same look as the monsters: soft gradient + warm outline) */
+const OUT = "#4a2410";
+const hexCol = (c) => typeof c === "number" ? "#" + c.toString(16).padStart(6, "0") : c;
+function shade(c, k) { // k > 0 lighter, k < 0 darker
+  const n = parseInt(hexCol(c).slice(1), 16), t = k > 0 ? 255 : 30, a = Math.abs(k);
+  const ch = (v) => Math.round(v + (t - v) * a);
+  return `rgb(${ch(n >> 16 & 255)},${ch(n >> 8 & 255)},${ch(n & 255)})`;
+}
+function vcv(w, h, draw, lw) { // draw at 4x, w x h "units"
+  const k = 4, c = document.createElement("canvas"); c.width = w * k; c.height = h * k;
+  const x = c.getContext("2d"); x.scale(k, k); x.lineJoin = x.lineCap = "round"; x.strokeStyle = OUT; x.lineWidth = lw || 1;
+  draw(x); return c;
+}
+function blob(x, path, col, top, bottom) { // fill a path with a vertical gradient and outline it
+  x.beginPath(); path(x);
+  const g = x.createLinearGradient(0, top, 0, bottom); g.addColorStop(0, shade(col, 0.35)); g.addColorStop(1, hexCol(col));
+  x.fillStyle = g; x.fill(); x.stroke();
+}
+const circ = (cx, cy, r) => (x) => { x.moveTo(cx + r, cy); x.arc(cx, cy, r, 0, Math.PI * 2); };
+const ellp = (cx, cy, rx, ry) => (x) => { x.moveTo(cx + rx, cy); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); };
+const poly = (pts) => (x) => { pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); };
 
 /* sun / moon far away (pages.js spins "planet") */
 const planet = new THREE.Group(); scene.add(planet);
 const ring = new THREE.Group();
 function orbCanvas(color, rim, moon) {
-  return artCv(24, 24, (d) => { d.ell(12, 12, 11, 11, color, { spec: true }); if (moon) for (const [x, y, r] of [[8, 9, 2.4], [15, 15, 3], [15, 7, 1.6]]) d.ell(x, y, r, r, rim, { paint: [color] }); });
+  return vcv(24, 24, (x) => {
+    const g = x.createRadialGradient(9, 9, 1, 12, 12, 11); g.addColorStop(0, "#ffffff"); g.addColorStop(0.5, hexCol(color)); g.addColorStop(1, shade(color, -0.15));
+    x.fillStyle = g; x.beginPath(); x.arc(12, 12, 11, 0, 7); x.fill();
+    if (moon) { x.fillStyle = hexCol(rim); x.globalAlpha = 0.6; for (const [a, b, r] of [[8, 9, 2.4], [15, 15, 3], [15, 7, 1.6]]) { x.beginPath(); x.arc(a, b, r, 0, 7); x.fill(); } }
+  });
 }
 const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ fog: false, transparent: true, depthWrite: false }));
 const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTexture("rgba(255,255,255,.75)", "rgba(255,255,255,0)"), fog: false, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -70,10 +93,27 @@ function applyQuality() {
 /* ---------- boss attack orbs ---------- */
 function buildMissile() { return MODELS.buildShot(); }
 
-/* ---------- effects: square beams, pixel bursts ---------- */
+/* ---------- effects: beams, sparkle bursts ---------- */
 const effects = [];
-const beamGeo = new THREE.CylinderGeometry(1, 1, 1, 4, 1, true);
-const flashGeo = new THREE.BoxGeometry(1, 1, 1);
+const beamGeo = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
+let sparkTex = null, bubbleTex = null;
+function bubbleTexture() { // shield: a soap-bubble ring
+  if (bubbleTex) return bubbleTex;
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d"), g = x.createRadialGradient(64, 64, 30, 64, 64, 62);
+  g.addColorStop(0, "rgba(140,230,255,0.05)"); g.addColorStop(0.75, "rgba(140,230,255,0.22)"); g.addColorStop(0.95, "rgba(200,245,255,0.75)"); g.addColorStop(1, "rgba(200,245,255,0)");
+  x.fillStyle = g; x.beginPath(); x.arc(64, 64, 62, 0, 7); x.fill();
+  x.fillStyle = "rgba(255,255,255,0.7)"; x.beginPath(); x.ellipse(42, 36, 14, 7, -0.6, 0, 7); x.fill();
+  return (bubbleTex = new THREE.CanvasTexture(c));
+}
+function sparkTexture() { // soft round dot with a bright centre
+  if (sparkTex) return sparkTex;
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const x = c.getContext("2d"), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(0.3, "rgba(255,255,255,0.8)"); g.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return (sparkTex = new THREE.CanvasTexture(c));
+}
 function beam(from, to, color, width, life) {
   const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
   const m = new THREE.Mesh(beamGeo, mat);
@@ -92,11 +132,11 @@ function explode(pos, color, count, size, speed) {
     vel.push(new V3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(speed * (0.3 + Math.random())));
   }
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
-  const mat = new THREE.PointsMaterial({ color, size: size * 1.4, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+  const mat = new THREE.PointsMaterial({ color, map: sparkTexture(), size: size * 2.2, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
   const p = new THREE.Points(geo, mat); scene.add(p);
   effects.push({ obj: p, life: 0.9, max: 0.9, kind: "burst", vel });
-  const flash = new THREE.Mesh(flashGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
-  flash.scale.setScalar(size * 4); flash.rotation.set(0.6, 0.6, 0);
+  const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTexture(), color: 0xffffff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  flash.scale.setScalar(size * 6);
   flash.position.copy(pos); scene.add(flash);
   effects.push({ obj: flash, life: 0.22, max: 0.22, kind: "flash", s: size * 4 });
 }
@@ -109,10 +149,10 @@ function updateEffects(dt) {
       const a = e.obj.geometry.attributes.position;
       for (let j = 0; j < e.vel.length; j++) { e.vel[j].y -= dt * 6; a.array[j * 3] += e.vel[j].x * dt; a.array[j * 3 + 1] += e.vel[j].y * dt; a.array[j * 3 + 2] += e.vel[j].z * dt; }
       a.needsUpdate = true; e.obj.material.opacity = k;
-    } else if (e.kind === "flash") { e.obj.material.opacity = k; e.obj.scale.setScalar(e.s * (1 + (1 - k) * 1.5)); e.obj.rotation.z += dt * 4; }
+    } else if (e.kind === "flash") { e.obj.material.opacity = k; e.obj.scale.setScalar(e.s * 1.5 * (1 + (1 - k) * 1.5)); }
     if (e.life <= 0) {
       scene.remove(e.obj);
-      if (e.obj.geometry !== beamGeo && e.obj.geometry !== flashGeo) e.obj.geometry.dispose();
+      if (e.obj.geometry !== beamGeo && !e.obj.isSprite) e.obj.geometry.dispose();
       e.obj.material.dispose(); effects.splice(i, 1);
     }
   }
@@ -175,48 +215,59 @@ function floater(x, y, text, color) {
 /* =====================================================================
  *  BATTLEFIELDS (unlocked by level) + FESTIVAL DECORATIONS
  * ===================================================================== */
-const TILE = 4; // world units per ground tile (32 px => 1/8 unit per pixel)
+const TILE = 8; // world units per ground tile
 const rand = (a, b) => a + Math.random() * (b - a);
-function tileCanvas(base, spots, grid, gridColor) { // 32x32 seamless pixel tile
-  const c = document.createElement("canvas"); c.width = c.height = 32;
+function tileCanvas(base, spots, grid, gridColor) { // 128x128 seamless tile: soft speckles + a thin data grid
+  const c = document.createElement("canvas"); c.width = c.height = 128;
   const x = c.getContext("2d");
-  x.fillStyle = base; x.fillRect(0, 0, 32, 32);
+  x.fillStyle = base; x.fillRect(0, 0, 128, 128);
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (const [col, n, w, h] of spots) { x.fillStyle = col; for (let i = 0; i < n; i++) x.fillRect(Math.floor(rnd() * 32), Math.floor(rnd() * 32), w, h); }
-  if (grid) { x.fillStyle = gridColor; x.fillRect(0, 0, 32, 1); x.fillRect(0, 0, 1, 32); }
-  return c;
-}
-/* billboard pixel props: tree, palm, cactus, rock, pine, tower, crystal, pillar */
-const PROP_ART = {
-  tree: [22, 30, (d) => { d.rect(9.5, 18, 3, 12, 0x8a5a2e); d.ell(11, 11, 9, 8, 0x3aa84a); d.ell(6, 15, 5, 4, 0x3aa84a, { join: true }); d.ell(16, 15, 5, 4, 0x3aa84a, { join: true }); d.ell(9, 8, 2, 1.5, 0x7ad86a, { paint: [0x3aa84a] }); }],
-  bush: [16, 10, (d) => { d.ell(8, 6, 7, 4, 0x4ab85a); d.ell(5, 4, 1.4, 1.2, 0xff7ab0); d.ell(11, 5, 1.3, 1.2, 0xffe066); }],
-  palm: [24, 34, (d) => { d.chain([[12, 33], [11, 22], [13, 10]], 1.8, 1.3, 0xb07a3e); d.sym(() => { d.chain([[13, 9], [6, 7], [1, 12]], 1.6, 0.6, 0x3ab85a); d.chain([[13, 9], [8, 2], [3, 3]], 1.6, 0.6, 0x3ab85a); }); d.ell(12, 11, 1.6, 1.6, 0x6a4a2a); }],
-  pine: [18, 32, (d) => { d.rect(7.5, 26, 3, 6, 0x6a4a2a); for (const [y, w] of [[27, 8.5], [20, 7], [13, 5.5]]) d.tri(9 - w, y, 9 + w, y, 9, y - 10, 0x2a7a4a); }],
-  cactus: [16, 24, (d) => { d.cap(8, 23, 8, 3, 2.6, 2.6, 0x4aa85a); d.chain([[8, 14], [3, 14], [3, 8]], 1.6, 1.6, 0x4aa85a); d.chain([[8, 17], [13, 17], [13, 11]], 1.6, 1.6, 0x4aa85a); d.ell(8, 2.5, 1.4, 1.4, 0xff6aa0); }],
-  rock: [18, 12, (d) => { d.ell(9, 7.5, 8.5, 5, 0x8a8a9a); d.ell(5, 9, 4, 3, 0x7a7a8a); }],
-  dune: [40, 10, (d) => { d.ell(20, 10, 20, 8, 0xe0a85a); }],
-  crystal: [12, 22, (d) => { d.poly([[6, 0.5], [11, 8], [9, 21], [3, 21], [1, 8]], 0x7ae8ff, { spec: true }); d.cap(6, 4, 5, 18, 0.6, 0.6, 0xffffff, { paint: [0x7ae8ff] }); }],
-  tower: [20, 46, (d) => { d.rect(2, 4, 16, 42, 0x2a2e48); for (let y = 8; y < 44; y += 5) for (let x = 4; x < 16; x += 4) d.rect(x, y, 2, 2, Math.random() < 0.6 ? 0x5affd0 : 0xff5ad8, { paint: [0x2a2e48] }); d.rect(9, 0, 2, 4, 0x2a2e48); }],
-  pillar: [12, 40, (d) => { d.rect(2, 2, 8, 38, 0x3a2a4a); d.rect(2, 10, 8, 1.4, 0xff3a5a, { paint: [0x3a2a4a] }); d.rect(2, 26, 8, 1.4, 0xff3a5a, { paint: [0x3a2a4a] }); d.ell(6, 2, 4, 2.4, 0xff3a5a, { spec: true }); }],
-  cloud: [40, 14, (d) => { d.ell(20, 9, 14, 5, 0xffffff); d.ell(13, 7, 7, 5, 0xffffff, { join: true }); d.ell(26, 6, 8, 5.5, 0xffffff, { join: true }); }],
-};
-const propCvCache = {};
-function propCv(id) { if (!propCvCache[id]) { const [w, h, draw] = PROP_ART[id]; propCvCache[id] = artCv(w, h, draw); } return propCvCache[id]; }
-function skyline(kind) { // far horizon silhouette, 256x48 pixels
-  const c = document.createElement("canvas"); c.width = 256; c.height = 48;
-  const x = c.getContext("2d");
-  const col = { plains: ["#5a9ad0", "#4a8a6a"], beach: ["#6ab0e0", "#2a8ad0"], forest: ["#2a4a5a", "#1a3a3a"], desert: ["#c8784a", "#a85a3a"], city: ["#2a2050", "#1a1438"], dark: ["#2a0a2a", "#14061a"] }[kind];
-  for (let layer = 0; layer < 2; layer++) {
-    x.fillStyle = col[layer];
-    let h = 20 + layer * 6;
-    for (let i = 0; i < 256; i++) {
-      if (kind === "city") { if (i % 12 === 0) h = 10 + Math.random() * 30 - layer * 6; }
-      else if (kind === "beach" && layer === 1) h = 8;
-      else h = Math.max(4, Math.min(44, h + (Math.random() - 0.5) * (kind === "dark" ? 6 : 3)));
-      x.fillRect(i, 48 - h, 1, h);
+  for (const [col, n, w, h] of spots) {
+    x.fillStyle = col;
+    for (let i = 0; i < n; i++) {
+      const px = rnd() * 128, py = rnd() * 128, rx = w * 1.6, ry = h * 1.2;
+      for (const [ox, oy] of [[0, 0], [128, 0], [-128, 0], [0, 128], [0, -128]]) { x.beginPath(); x.ellipse(px + ox, py + oy, rx, ry, 0, 0, 7); x.fill(); }
     }
   }
-  if (kind === "city") { x.fillStyle = "#ffe066"; for (let i = 0; i < 90; i++) x.fillRect(Math.random() * 256 | 0, 24 + Math.random() * 22 | 0, 1, 1); }
+  if (grid) { x.fillStyle = gridColor; x.fillRect(0, 0, 128, 2); x.fillRect(0, 0, 2, 128); }
+  return c;
+}
+/* billboard props: tree, bush, palm, pine, cactus, rock, dune, crystal, tower, pillar, cloud */
+const PROP_ART = {
+  tree: [22, 30, (x) => { blob(x, poly([[9.5, 18], [12.5, 18], [13, 29.5], [9, 29.5]]), 0x9a6a3a, 18, 30); blob(x, (p) => { p.moveTo(3, 15); p.bezierCurveTo(-1, 9, 4, 2, 9, 3); p.bezierCurveTo(12, -1, 19, 1, 19, 6); p.bezierCurveTo(23, 9, 21, 17, 16, 18); p.bezierCurveTo(12, 21, 6, 20, 3, 15); }, 0x4ab85a, 1, 20); x.fillStyle = "rgba(255,255,255,.45)"; x.beginPath(); x.ellipse(8, 7, 3, 1.6, -0.5, 0, 7); x.fill(); }],
+  bush: [16, 10, (x) => { blob(x, (p) => { p.moveTo(1.5, 9); p.bezierCurveTo(0, 4, 4, 1, 7, 3); p.bezierCurveTo(9, 0, 15, 1, 14.5, 9); p.closePath(); }, 0x5ac85a, 1, 9); x.fillStyle = "#ff8ab4"; x.beginPath(); x.arc(5, 5, 1.1, 0, 7); x.fill(); x.fillStyle = "#ffe066"; x.beginPath(); x.arc(11, 4.5, 1, 0, 7); x.fill(); }],
+  palm: [24, 34, (x) => { x.lineWidth = 3.4; x.beginPath(); x.moveTo(12, 33); x.quadraticCurveTo(10, 22, 13, 10); x.stroke(); x.strokeStyle = "#c08a4a"; x.lineWidth = 2; x.stroke(); x.strokeStyle = OUT; x.lineWidth = 1;
+    for (const s of [-1, 1]) { blob(x, (p) => { p.moveTo(13, 9); p.quadraticCurveTo(13 + s * 7, 3, 13 + s * 11, 11); p.quadraticCurveTo(13 + s * 6, 7, 13, 10); }, 0x3ab85a, 3, 11); blob(x, (p) => { p.moveTo(13, 9); p.quadraticCurveTo(13 + s * 5, 0, 13 + s * 9, 2); p.quadraticCurveTo(13 + s * 4, 3, 13, 10); }, 0x4ac86a, 0, 10); }
+    blob(x, circ(12.5, 10.5, 1.8), 0x7a4a2a, 9, 12); }],
+  pine: [18, 32, (x) => { blob(x, poly([[7.5, 26], [10.5, 26], [10.5, 31.5], [7.5, 31.5]]), 0x7a5a3a, 26, 32); for (const [y, w] of [[27, 8.5], [20, 7], [13, 5.5]]) blob(x, (p) => { p.moveTo(9 - w, y); p.quadraticCurveTo(9, y + 2, 9 + w, y); p.lineTo(9, y - 10); p.closePath(); }, 0x2f8a52, y - 10, y); }],
+  cactus: [16, 24, (x) => { const g = 0x4ab85a; blob(x, (p) => { p.moveTo(5.4, 23.5); p.lineTo(5.4, 5); p.arc(8, 5, 2.6, Math.PI, 0); p.lineTo(10.6, 23.5); p.closePath(); }, g, 2, 24); blob(x, (p) => { p.moveTo(5.4, 15); p.lineTo(3, 15); p.quadraticCurveTo(1.4, 15, 1.4, 13); p.lineTo(1.4, 9); p.arc(2.9, 9, 1.5, Math.PI, 0); p.lineTo(4.4, 12.6); p.lineTo(5.4, 12.6); }, g, 7, 15); blob(x, (p) => { p.moveTo(10.6, 18); p.lineTo(13, 18); p.quadraticCurveTo(14.6, 18, 14.6, 16); p.lineTo(14.6, 12); p.arc(13.1, 12, 1.5, 0, Math.PI, true); p.lineTo(11.6, 15.6); p.lineTo(10.6, 15.6); }, g, 10, 18); blob(x, circ(8, 2.4, 1.4), 0xff6aa0, 1, 4); }],
+  rock: [18, 12, (x) => { blob(x, (p) => { p.moveTo(1, 11.5); p.bezierCurveTo(0, 6, 4, 2, 9, 2.5); p.bezierCurveTo(14, 2, 18, 6, 17, 11.5); p.closePath(); }, 0x9a9aac, 2, 12); x.fillStyle = "rgba(255,255,255,.4)"; x.beginPath(); x.ellipse(7, 5, 2.6, 1.2, -0.3, 0, 7); x.fill(); }],
+  dune: [40, 10, (x) => { blob(x, (p) => { p.moveTo(0.5, 9.8); p.bezierCurveTo(10, 1, 26, 0, 39.5, 9.8); p.closePath(); }, 0xe8b46a, 1, 10); }],
+  crystal: [12, 22, (x) => { blob(x, poly([[6, 0.8], [11, 8], [9, 21], [3, 21], [1, 8]]), 0x7ae8ff, 0, 21); x.strokeStyle = "rgba(255,255,255,.8)"; x.beginPath(); x.moveTo(6, 3); x.lineTo(5, 18); x.stroke(); }],
+  tower: [20, 46, (x) => { blob(x, poly([[2, 4], [18, 4], [18, 45.5], [2, 45.5]]), 0x3a3e68, 4, 46); for (let y = 8; y < 44; y += 5) for (let i = 4; i < 16; i += 4) { x.fillStyle = Math.random() < 0.6 ? "#5affd0" : "#ff5ad8"; x.fillRect(i, y, 2, 2); } blob(x, poly([[9, 0.5], [11, 0.5], [11, 4], [9, 4]]), 0x3a3e68, 0, 4); }],
+  pillar: [12, 40, (x) => { blob(x, poly([[2, 3], [10, 3], [10, 39.5], [2, 39.5]]), 0x4a3a5a, 3, 40); x.fillStyle = "#ff3a5a"; x.fillRect(2.5, 10, 7, 1.4); x.fillRect(2.5, 26, 7, 1.4); blob(x, ellp(6, 2.6, 4, 2.2), 0xff3a5a, 0, 5); }],
+  cloud: [40, 14, (x) => { x.strokeStyle = "rgba(120,150,200,.55)"; blob(x, (p) => { p.moveTo(4, 13); p.bezierCurveTo(-1, 13, 0, 6, 6, 7); p.bezierCurveTo(7, 1, 16, 0, 19, 4); p.bezierCurveTo(23, -1, 33, 1, 32, 6); p.bezierCurveTo(39, 5, 41, 13, 35, 13); p.closePath(); }, 0xeef6ff, 0, 14); }],
+};
+const propCvCache = {};
+function propCv(id) { if (!propCvCache[id]) { const [w, h, draw] = PROP_ART[id]; propCvCache[id] = vcv(w, h, draw, 0.8); } return propCvCache[id]; }
+function skyline(kind) { // far horizon: two layers of soft hills (or city blocks)
+  const c = document.createElement("canvas"); c.width = 1024; c.height = 192;
+  const x = c.getContext("2d");
+  const col = { plains: ["#7ab8e8", "#5aa87a"], beach: ["#8ac8f0", "#3a9ae0"], forest: ["#2a5a6a", "#1a4a40"], desert: ["#d8946a", "#b86a4a"], city: ["#2a2050", "#1a1438"], dark: ["#3a0a3a", "#1a061e"] }[kind];
+  for (let layer = 0; layer < 2; layer++) {
+    x.fillStyle = col[layer];
+    x.beginPath(); x.moveTo(0, 192);
+    if (kind === "city") {
+      let xx = 0; while (xx < 1024) { const w = 24 + Math.random() * 40, h = 40 + Math.random() * 110 - layer * 30; x.lineTo(xx, 192 - h); x.lineTo(xx + w, 192 - h); xx += w; }
+    } else if (kind === "beach" && layer === 1) { x.lineTo(0, 160); x.lineTo(1024, 160); }
+    else {
+      const n = 6 + layer * 4, base = 192 - (kind === "dark" ? 110 : 80) + layer * 30;
+      x.lineTo(0, base);
+      for (let i = 0; i < n; i++) { const x0 = i * 1024 / n, x1 = (i + 1) * 1024 / n, peak = base - 20 - Math.random() * (kind === "dark" ? 70 : 45); x.bezierCurveTo(x0 + (x1 - x0) * 0.3, peak, x0 + (x1 - x0) * 0.7, peak, x1, base); }
+    }
+    x.lineTo(1024, 192); x.closePath(); x.fill();
+  }
+  if (kind === "city") { x.fillStyle = "#ffe066"; for (let i = 0; i < 260; i++) x.fillRect(Math.random() * 1024 | 0, 90 + Math.random() * 100 | 0, 3, 3); }
   return c;
 }
 const ENVS = {
@@ -264,35 +315,36 @@ function setEnvironment(id, eventId) {
   setSky(E.sky[0], E.sky[1], E.sky[2]);
   scene.fog.color.set(E.fog);
   hemi.color.set(E.hemi[0]); hemi.groundColor.set(E.hemi[1]);
-  // ground: 32x32 pixel tile repeated; the texture scrolls to make the world move
+  // ground: one 128x128 tile repeated; the texture scrolls to make the world move
   const [base, spots, grid, gridCol] = E.tile;
-  const gt = pixTex(tileCanvas(base, spots, grid, gridCol), [600 / TILE, 520 / TILE]);
+  const gt = canTex(tileCanvas(base, spots, grid, gridCol), [600 / TILE, 520 / TILE]);
   envGround = new THREE.Mesh(new THREE.PlaneGeometry(600, 520), new THREE.MeshBasicMaterial({ map: gt }));
   envGround.rotation.x = -Math.PI / 2; envGround.position.set(0, 0, -240); envGroup.add(envGround);
-  if (E.sea) { // a strip of pixel sea toward the horizon
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 300), new THREE.MeshBasicMaterial({ map: pixTex(tileCanvas("#2a9ae0", [["#5ac0f0", 40, 3, 1], ["#ffffff", 8, 2, 1]], false), [900 / TILE, 300 / TILE]) }));
+  if (E.sea) { // a strip of sea toward the horizon
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(900, 300), new THREE.MeshBasicMaterial({ map: canTex(tileCanvas("#2a9ae0", [["#5ac0f0", 40, 3, 1], ["#ffffff", 8, 2, 1]], false), [900 / TILE, 300 / TILE]) }));
     sea.rotation.x = -Math.PI / 2; sea.position.set(0, 0.05, -420); envGroup.add(sea); envGround.userData.sea = sea;
   }
   // far skyline
-  const sk = new THREE.Mesh(new THREE.PlaneGeometry(1100, 206), new THREE.MeshBasicMaterial({ map: pixTex(skyline(id)), transparent: true, fog: false, depthWrite: false }));
-  sk.position.set(0, 85, -560); envGroup.add(sk);
+  const sk = new THREE.Mesh(new THREE.PlaneGeometry(2600, 300), new THREE.MeshBasicMaterial({ map: canTex(skyline(id)), transparent: true, fog: false, depthWrite: false }));
+  sk.position.set(-300, 110, -620); envGroup.add(sk);
   // sun / moon
-  sunSprite.material.map = pixTex(orbCanvas(E.sun, 0xc8c8d8, E.moon)); sunSprite.material.needsUpdate = true;
+  sunSprite.material.map = canTex(orbCanvas(E.sun, 0xc8c8d8, E.moon)); sunSprite.material.needsUpdate = true;
   sunGlow.material.color.set(E.sun); sunGlow.material.opacity = E.moon ? 0.35 : 0.8;
   planet.position.set(E.moon ? -140 : 150, E.moon ? 150 : 130, -620);
   // billboard props on both sides of the battle lane
   for (const [pid, n] of E.props) for (let i = 0; i < n; i++) {
-    const cv = propCv(pid), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: pixTex(cv), transparent: true, alphaTest: 0.5 }));
-    const s = pid === "tower" || pid === "pillar" ? rand(0.32, 0.5) : rand(0.2, 0.3);
+    const cv = propCv(pid), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(cv), transparent: true, alphaTest: 0.05 }));
+    const s = (pid === "tower" || pid === "pillar" ? rand(0.32, 0.5) : rand(0.2, 0.3)) / 4;
     sp.center.set(0.5, 0); sp.scale.set(cv.width * s, cv.height * s, 1);
-    const side = Math.random() < 0.5 ? -1 : 1;
-    sp.position.set(side * rand(26, 110), 0, rand(-420, 10));
+    // mostly beyond the far side of the battle lane (the camera looks from the right)
+    const side = Math.random() < 0.75 ? -1 : 1;
+    sp.position.set(side < 0 ? -rand(34, 130) : rand(40, 110), 0, rand(-420, 10));
     envGroup.add(sp); envProps.push(sp);
   }
   for (let i = 0; i < E.clouds; i++) {
-    const cv = propCv("cloud"), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: pixTex(cv), transparent: true, alphaTest: 0.5, fog: false, opacity: 0.95 }));
-    const s = rand(1.2, 2.4); sp.scale.set(cv.width * s, cv.height * s, 1);
-    sp.position.set(rand(-300, 300), rand(60, 140), rand(-520, -380));
+    const cv = propCv("cloud"), sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(cv), transparent: true, fog: false, opacity: 0.95, depthWrite: false }));
+    const s = rand(1.2, 2.4) / 4; sp.scale.set(cv.width * s, cv.height * s, 1);
+    sp.position.set(rand(-420, 200), rand(70, 150), rand(-520, -380));
     envGroup.add(sp); envClouds.push(sp);
   }
   styleStars();
@@ -303,16 +355,16 @@ function setEnvironment(id, eventId) {
   if (decor.lanterns) {
     const colors = decor.lanterns;
     for (let i = 0; i < 18; i++) {
-      const cv = artCv(10, 14, (d) => { d.ell(5, 7, 4.6, 4.4, colors[i % colors.length], { spec: true }); d.rect(2, 1.5, 6, 1.6, 0xffc23a); d.rect(2, 11, 6, 1.6, 0xffc23a); d.cap(5, 12.5, 5, 14, 0.5, 0.5, 0xffc23a); });
-      const l = new THREE.Sprite(new THREE.SpriteMaterial({ map: pixTex(cv), transparent: true, alphaTest: 0.5 }));
-      l.scale.set(cv.width * 0.3, cv.height * 0.3, 1);
+      const cv = vcv(10, 14, (x) => { blob(x, ellp(5, 7, 4.4, 4.2), colors[i % colors.length], 3, 11); blob(x, poly([[2.5, 1.6], [7.5, 1.6], [7.5, 3.2], [2.5, 3.2]]), 0xffc23a, 1, 3); blob(x, poly([[2.5, 10.8], [7.5, 10.8], [7.5, 12.4], [2.5, 12.4]]), 0xffc23a, 10, 12); }, 0.6);
+      const l = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(cv), transparent: true, alphaTest: 0.05 }));
+      l.scale.set(cv.width * 0.075, cv.height * 0.075, 1);
       l.position.set((Math.random() < 0.5 ? -1 : 1) * (18 + Math.random() * 40), 6 + Math.random() * 26, -20 - Math.random() * 160);
       l.userData.ph = Math.random() * 6;
       envGroup.add(l); envLanterns.push(l);
     }
   }
   if (decor.moon) {
-    const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: pixTex(orbCanvas(0xfff1b8, 0xe8d898, true)), fog: false, transparent: true }));
+    const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(orbCanvas(0xfff1b8, 0xe8d898, true)), fog: false, transparent: true }));
     moon.position.set(110, 90, -400); moon.scale.setScalar(60); envGroup.add(moon);
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTexture("rgba(255,240,180,.6)", "rgba(0,0,0,0)"), transparent: true, depthWrite: false, fog: false }));
     halo.position.copy(moon.position); halo.scale.setScalar(160); envGroup.add(halo);
@@ -335,12 +387,12 @@ function setEnvironment(id, eventId) {
   }
 }
 const emojiCache = {};
-function emojiTexture(ch) { // emoji drawn small then shown with nearest filtering = pixel emoji
+function emojiTexture(ch) {
   if (emojiCache[ch]) return emojiCache[ch];
-  const c = document.createElement("canvas"); c.width = c.height = 24;
+  const c = document.createElement("canvas"); c.width = c.height = 96;
   const x = c.getContext("2d"); x.textAlign = "center"; x.textBaseline = "middle";
-  x.font = '18px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'; x.fillText(ch, 12, 13);
-  return (emojiCache[ch] = pixTex(c));
+  x.font = '76px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'; x.fillText(ch, 48, 52);
+  return (emojiCache[ch] = canTex(c));
 }
 function updateEnvironment(dt, speed) {
   if (!envGroup) return;

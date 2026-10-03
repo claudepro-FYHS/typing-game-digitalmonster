@@ -47,13 +47,12 @@ function speedFactor(t) { const v = player(t.victim); if (!v) return 1; return v
 /* ---------- setup ---------- */
 function makePlayer(info, idx, n) {
   const mech = MECH_BY_ID[info.mech] || MECHS[0];
-  const mesh = MODELS.buildMech(mech, SKIN_BY_ID[info.skin], { back: true }); // we see our partner from behind
-  mesh.rotation.y = Math.PI; mesh.scale.setScalar(0.62);
+  const mesh = MODELS.buildMech(mech, SKIN_BY_ID[info.skin]); // partners stand lower-left, facing right
   const x = n > 1 ? (idx - (n - 1) / 2) * 7 : 0;
   mesh.position.set(x, 0, 0);
   scene.add(mesh);
-  const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 1), new THREE.MeshBasicMaterial({ color: 0x8fe3ff, transparent: true, opacity: 0.16, wireframe: true, depthWrite: false }));
-  shieldMesh.position.set(x, 1.5, 0); shieldMesh.visible = false; scene.add(shieldMesh);
+  const shieldMesh = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTexture(), transparent: true, depthWrite: false }));
+  shieldMesh.scale.setScalar(5.2); shieldMesh.position.set(x, 1.9, 0.3); shieldMesh.visible = false; scene.add(shieldMesh);
   const aura = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.3, 0.15, 6, 1, true), new THREE.MeshBasicMaterial({ color: 0x3ad0ff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   aura.position.set(x, 0.1, 0); aura.visible = false; scene.add(aura);
   const p = { pid: info.pid, nick: info.nick || "Tamer", cls: info.cls || "", mech, mesh, shieldMesh, aura, anim: MODELS.newAnim(), x, color: PCOLORS[idx % 4],
@@ -293,8 +292,11 @@ function onFx(ev) {
     for (const id of ev.ids || []) { const t = G.byId[id]; if (t) beam(muzzlePos(p), targetPoint(t), 0xfff2a8, 0.5, 0.5); }
     if (ev.boss && G.boss) beam(muzzlePos(p), targetPoint(G.boss.target), 0xfff2a8, 0.9, 0.6);
     G.shake = Math.max(G.shake, 0.3); sfx("buster");
-    if (p.pid !== G.myPid && G.mode === "multi") floater(window.innerWidth / 2, 150, `${p.nick}: ${p.mech.name} DIGIVOLVED!`, p.color);
-    else if (p.pid === G.myPid) floater(window.innerWidth / 2, 150, `${p.mech.name} EVOLVED INTO ${p.mech.evo}!`, "#ffe066");
+    const what = p.mech.knight ? `${p.mech.name} SPECIAL MOVE!` : `${p.mech.name} DIGIVOLVED INTO ${p.mech.evo}!`;
+    if (p.pid !== G.myPid && G.mode === "multi") floater(window.innerWidth / 2, 150, `${p.nick}: ${what}`, p.color);
+    else if (p.pid === G.myPid) floater(window.innerWidth / 2, 150, what, "#ffe066");
+  } else if (ev.kind === "comboItem") {
+    if (p.pid === G.myPid) { floater(window.innerWidth / 2, 190, `${p.mech.name} GIVES YOU ${ITEM_ICON[ev.item] || ""} ${String(ev.item).toUpperCase()}!`, "#7dff8a"); sfx("item"); }
   } else if (ev.kind === "bomb") {
     if (p.pid === G.myPid) { const f = $("#flash"); f.style.background = "rgba(255,255,255,.7)"; f.classList.add("on"); setTimeout(() => { f.classList.remove("on"); setTimeout(() => f.style.background = "", 400); }, 80); }
     sfx("buster");
@@ -535,7 +537,7 @@ function update(dt) {
       b.enter = Math.min(1, b.enter + dt / 2.5);
       b.attack = Math.max(0, b.attack - dt * 1.5);
       const e = b.enter, m = t.mesh;
-      m.position.set(Math.sin(G.time * 0.5) * 6 * e, 9 + Math.sin(G.time * 1.3) * 0.8, -150 + (150 - 58) * (1 - Math.pow(1 - e, 3)));
+      m.position.set(Math.sin(G.time * 0.5) * 6 * e, 11 + Math.sin(G.time * 1.3) * 0.8, -150 + (150 - 58) * (1 - Math.pow(1 - e, 3)));
       MODELS.animateBoss(m, dt, G.time, b.attack, chest);
       t.pos.copy(m.position).add(new V3(0, m.userData.top, 0));
       continue;
@@ -576,7 +578,7 @@ function update(dt) {
     MODELS.animateMech(p.mesh, p.anim, dt);
     p.shieldMesh.visible = p.shield && p.alive;
     if (p.aura.visible) { const k = 0.5 + 0.5 * Math.sin(G.time * 6); p.aura.material.opacity = 0.3 + 0.25 * k + G.comboTier * 0.05; p.aura.scale.set(1 + 0.15 * k, 1 + 8 * k, 1 + 0.15 * k); p.aura.position.y = 0.1 + 0.6 * k; p.aura.rotation.y += dt * 2; if (!p.alive) p.aura.visible = false; }
-    if (p.shield) p.shieldMesh.rotation.y += dt;
+    if (p.shield) p.shieldMesh.material.opacity = 0.75 + 0.2 * Math.sin(G.time * 4);
   }
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
 
@@ -650,6 +652,7 @@ function comboCheck() {
     el.style.color = COMBO_COLORS[tier]; el.style.textShadow = `0 0 24px ${COMBO_COLORS[tier]}`;
     el.classList.remove("go"); void el.offsetWidth; el.classList.add("go");
     sfx("clear"); G.me.anim.victory = 0.6;
+    if (G.me.mech.comboItem && G.combo >= 25) requestComboItem(G.combo);
   }
   if (tier !== G.comboTier) setComboTier(tier);
 }
@@ -699,6 +702,20 @@ function completeWord(t) {
   updateHud();
 }
 
+/* Royal Knights don't evolve: a 25 / 50 / 100 combo gives them their item instead (max 3) */
+function requestComboItem(n) {
+  if (!G.me.alive) return;
+  if (isAuthority()) grantComboItem(G.myPid, n); else netSend({ r: "combo", n });
+}
+function grantComboItem(pid, n) {
+  const p = player(pid), k = p && p.mech.comboItem;
+  if (!k || !p.alive || ![25, 50, 100].includes(n)) return;
+  if (n === 25 || !p.comboItems) p.comboItems = {}; // 25 starts a new combo run
+  if (p.comboItems[n] || p.items[k] >= 3) return; // once per combo step, until the combo breaks
+  p.comboItems[n] = true; p.items[k]++;
+  emit({ e: "fx", pid, kind: "comboItem", item: k });
+  emitPState(p);
+}
 function requestItem(k) {
   if (!G.me.alive || !(G.me.items[k] > 0)) return;
   if (isAuthority()) doItem(G.myPid, k); else netSend({ r: "item", k });
@@ -989,9 +1006,11 @@ function showProgress(pg, predicted) {
 }
 
 /* ---------- share card ---------- */
-function drawPixel(x, cv, cx, bottom, scale) { // nearest-neighbour upscale of a pixel-art canvas
-  x.imageSmoothingEnabled = false;
-  x.drawImage(cv, Math.round(cx - cv.width * scale / 2), Math.round(bottom - cv.height * scale), cv.width * scale, cv.height * scale);
+function drawArt(x, cv, cx, bottom, h) { // a partner portrait (canvas from MODELS.portrait), h pixels tall
+  if (!cv.ver) return;
+  const w = h * cv.width / cv.height;
+  x.imageSmoothingEnabled = true;
+  x.drawImage(cv, Math.round(cx - w / 2), Math.round(bottom - h), w, h);
 }
 function buildShareCard(r) {
   return new Promise((resolve) => {
@@ -1003,24 +1022,27 @@ function buildShareCard(r) {
     for (let gy = 0; gy < 1350; gy += 54) { x.fillStyle = "rgba(90,255,210,.07)"; x.fillRect(0, gy, 1080, 2); }
     for (let i = 0; i < 120; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.8})`; const s = Math.random() < 0.2 ? 6 : 3; x.fillRect(Math.random() * 1080 | 0, Math.random() * 1350 | 0, s, s); }
     x.fillStyle = "#5affd0"; for (const [a, b, w, h] of [[24, 24, 1032, 8], [24, 1318, 1032, 8], [24, 24, 8, 1302], [1048, 24, 8, 1302]]) x.fillRect(a, b, w, h);
-    x.textAlign = "center"; x.fillStyle = "#ffcc33"; x.font = "700 70px 'Pixelify Sans', Arial, sans-serif"; x.fillText("DIGI MONSTER TYPER", 540, 120);
+    x.textAlign = "center"; x.fillStyle = "#ffcc33"; x.font = "700 70px 'Baloo 2', Arial, sans-serif"; x.fillText("DIGI MONSTER TYPER", 540, 120);
     const pr = profile(), nick = isSchool() && S.session.player ? S.session.player.nickname : "Guest Tamer";
-    x.fillStyle = "#e8f1ff"; x.font = "700 54px 'Pixelify Sans', Arial, sans-serif"; x.fillText(nick, 540, 200);
-    x.fillStyle = "#a8b8e0"; x.font = "600 34px 'Exo 2', Arial, sans-serif";
+    x.fillStyle = "#e8f1ff"; x.font = "700 54px 'Baloo 2', Arial, sans-serif"; x.fillText(nick, 540, 200);
+    x.fillStyle = "#a8b8e0"; x.font = "600 34px 'Nunito', Arial, sans-serif";
     x.fillText(`Tamer LV ${myLevel()}${pr.title && BADGE_BY_ID[pr.title] ? "  ·  " + BADGE_BY_ID[pr.title].icon + " " + BADGE_BY_ID[pr.title].name : ""}`, 540, 250);
     const m = MECH_BY_ID[r.mech] || MECHS[0], skin = SKIN_BY_ID[profile().skin];
     try {
-      const rookie = MODELS.portrait(m, skin), evo = MODELS.portrait(m, skin, { evo: true });
-      x.fillStyle = "rgba(10,6,30,.35)"; x.fillRect(110, 905, 860, 22);
-      drawPixel(x, rookie, 240, 920, 7); drawPixel(x, evo, 700, 920, 11);
-      x.fillStyle = "#ffe066"; x.font = "700 64px 'Pixelify Sans', Arial, sans-serif"; x.fillText("➜", 405, 800);
+      const rookie = MODELS.portrait(m, skin, { h: 512 }), evo = MODELS.portrait(m, skin, { evo: true, h: 512 });
+      x.fillStyle = "rgba(10,6,30,.35)"; x.beginPath(); x.ellipse(540, 915, 430, 22, 0, 0, 7); x.fill();
+      if (m.knight) drawArt(x, rookie, 540, 925, 560);
+      else {
+        drawArt(x, rookie, 250, 925, 330); drawArt(x, evo, 690, 925, 560);
+        x.fillStyle = "#ffe066"; x.font = "700 64px 'Baloo 2', Arial, sans-serif"; x.fillText("➜", 420, 760);
+      }
     } catch (e) {}
-    x.fillStyle = "#ffcc33"; x.font = "700 150px 'Pixelify Sans', Arial, sans-serif"; x.fillText(String(r.wpm), 540, 1060);
-    x.fillStyle = "#a8b8e0"; x.font = "700 36px 'Pixelify Sans', Arial, sans-serif"; x.fillText("WPM", 540, 1100);
+    x.fillStyle = "#ffcc33"; x.font = "700 150px 'Baloo 2', Arial, sans-serif"; x.fillText(String(r.wpm), 540, 1060);
+    x.fillStyle = "#a8b8e0"; x.font = "700 36px 'Baloo 2', Arial, sans-serif"; x.fillText("WPM", 540, 1100);
     const stats = [[r.accuracy + "%", "ACCURACY"], [String(r.kills), "VIRUSES"], [String(r.maxCombo || 0), "MAX COMBO"], [String(r.stage), "STAGE"]];
-    stats.forEach(([v, l], i) => { const cx = 175 + i * 243; x.fillStyle = "#e8f1ff"; x.font = "700 52px 'Pixelify Sans', Arial, sans-serif"; x.fillText(v, cx, 1190); x.fillStyle = "#a8b8e0"; x.font = "600 24px 'Pixelify Sans', Arial, sans-serif"; x.fillText(l, cx, 1226); });
-    x.fillStyle = "#a8b8e0"; x.font = "500 26px 'Exo 2', Arial, sans-serif";
-    x.fillText(`${m.name} → ${m.evo} · ${r.difficulty} · ${r.mode === "Multi" ? "Multiplayer" : "Solo"} · ${new Date().toLocaleDateString("en-GB")}`, 540, 1272);
+    stats.forEach(([v, l], i) => { const cx = 175 + i * 243; x.fillStyle = "#e8f1ff"; x.font = "700 52px 'Baloo 2', Arial, sans-serif"; x.fillText(v, cx, 1190); x.fillStyle = "#a8b8e0"; x.font = "600 24px 'Baloo 2', Arial, sans-serif"; x.fillText(l, cx, 1226); });
+    x.fillStyle = "#a8b8e0"; x.font = "500 26px 'Nunito', Arial, sans-serif";
+    x.fillText(`${m.knight ? m.name + " (Royal Knight)" : m.name + " → " + m.evo} · ${r.difficulty} · ${r.mode === "Multi" ? "Multiplayer" : "Solo"} · ${new Date().toLocaleDateString("en-GB")}`, 540, 1272);
     x.fillText(location.host + location.pathname, 540, 1306);
     resolve(c.toDataURL("image/png"));
   });
