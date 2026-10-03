@@ -72,6 +72,13 @@ class PixelArt {
     return this._shape((x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1, cx - rx, cy - ry, cx + rx, cy + ry, c,
       { t: "e", cx, cy, rx, ry, spec: o.spec, join: o.join }, o.paint);
   }
+  /* octagon: a box with 45-degree corners cut off (size `cut`), shaded like a bevelled gem with hard facets */
+  oct(cx, cy, rx, ry, cut, c, o) {
+    o = o || {}; cx = this.X(cx);
+    const k = 2 - cut / Math.min(rx, ry);
+    const test = (x, y) => { const nx = Math.abs(x - cx) / rx, ny = Math.abs(y - cy) / ry; return nx <= 1 && ny <= 1 && nx + ny <= k; };
+    return this._shape(test, cx - rx, cy - ry, cx + rx, cy + ry, c, { t: "o", cx, cy, rx, ry, k, bev: o.bevel || 0.6, spec: o.spec, join: o.join }, o.paint);
+  }
   /* rectangle, shaded flat with lit top/left edges */
   rect(x, y, w, h, c, o) {
     o = o || {}; const x0 = this.mir ? this.w - x - w : x;
@@ -130,13 +137,23 @@ class PixelArt {
         const t = clamp(((px - g.x0) * g.dx + (py - g.y0) * g.dy) / g.L2, 0, 1), rr = g.r0 + (g.r1 - g.r0) * t;
         const ox = (px - (g.x0 + g.dx * t)) / rr, oy = (py - (g.y0 + g.dy * t)) / rr, nz = Math.sqrt(Math.max(0, 1 - ox * ox - oy * oy));
         lum = ox * LIGHT[0] + oy * LIGHT[1] + nz * LIGHT[2];
+      } else if (g.t === "o") { // facets: flat top face inside the bevel, angled faces around it
+        const nx = (px - g.cx) / g.rx, ny = (py - g.cy) / g.ry, ax = Math.abs(nx), ay = Math.abs(ny), dg = (ax + ay) / g.k;
+        const m = Math.max(ax, ay, dg);
+        let n;
+        if (m < g.bev) n = [0, 0, 1];
+        else if (dg >= ax && dg >= ay) n = [Math.sign(nx) * 0.5, Math.sign(ny) * 0.5, 0.7];
+        else if (ax >= ay) n = [Math.sign(nx) * 0.7, 0, 0.7];
+        else n = [0, Math.sign(ny) * 0.7, 0.7];
+        const nl = Math.hypot(n[0], n[1], n[2]);
+        lum = (n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]) / nl;
       } else {
         lum = 0.42 - 0.3 * clamp((py - g.y0) / Math.max(1, g.y1 - g.y0), 0, 1);
         if (!same(i, i - W)) lum += 0.38; else if (!same(i, i - 1)) lum += 0.22;
         if (!same(i, i + W)) lum -= 0.42; else if (!same(i, i + 1)) lum -= 0.2;
       }
       // ordered dithering near tone borders gives the crisp "HD pixel" gradient
-      if ((x + y) & 1) lum += 0.035; else lum -= 0.035;
+      if (g.t !== "o") { if ((x + y) & 1) lum += 0.035; else lum -= 0.035; }
       let k = 0; while (k < 4 && lum > TH[k]) k++;
       if (k === 4 && !g.spec) k = 3;
       // internal outline: a part drawn later (in front) gets a dark line on the part behind it
