@@ -351,3 +351,69 @@ Object.assign(module.exports, {
     return ['10 -4 204 214', s];
   },
 });
+
+// WarGreymon: one solid armoured dragon warrior. Brave Shield halves as wings behind the shoulders,
+// Dramon Destroyer gauntlets (three big claws) on both forearms, helmet with three horns.
+Object.assign(module.exports, {
+  wargreymon(H) {
+    const gold = '#f2c23a', org = '#ff9a2a', steel = '#eef4ff', red = '#e8483a', navy = '#1a2244', hair = '#d8843a';
+    const claw3 = (x, y, ang, len, w) => { // three curved Dramon Destroyer claws fanning out from (x,y)
+      let s = '';
+      for (const k of [1, -1, 0]) {
+        const a = (ang + k * 17) * Math.PI / 180, L = len * (k ? 0.84 : 1), ex = x + Math.cos(a) * L, ey = y + Math.sin(a) * L;
+        const nx = -Math.sin(a) * w, ny = Math.cos(a) * w, mx = x + Math.cos(a) * L * 0.5, my = y + Math.sin(a) * L * 0.5;
+        s += H.p(`M${(x + nx).toFixed(1)} ${(y + ny).toFixed(1)} Q${(mx + nx * 1.3).toFixed(1)} ${(my + ny * 1.3).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)} Q${(mx - nx * 0.5).toFixed(1)} ${(my - ny * 0.5).toFixed(1)} ${(x - nx).toFixed(1)} ${(y - ny).toFixed(1)} Z`, H.metal(steel), 'stroke-width="3"');
+      }
+      return s;
+    };
+    const gauntlet = (cx, cy, ang, len, r) => { // gold forearm cylinder pointing along ang
+      const a = ang * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a), nx = -uy * r, ny = ux * r;
+      const x0 = cx - ux * len / 2, y0 = cy - uy * len / 2, x1 = cx + ux * len / 2, y1 = cy + uy * len / 2;
+      return H.p(`M${x0 + nx} ${y0 + ny} L${x1 + nx * 1.15} ${y1 + ny * 1.15} L${x1 - nx * 1.15} ${y1 - ny * 1.15} L${x0 - nx} ${y0 - ny} Z`, H.metal(gold))
+        + H.p(`M${cx + nx * 0.9} ${cy + ny * 0.9} L${cx - nx * 0.9} ${cy - ny * 0.9}`, 'none', 'stroke-width="2.2"')
+        + H.p(`M${x1 + nx * 0.6} ${y1 + ny * 0.6} L${x1 - nx * 0.6} ${y1 - ny * 0.6}`, 'none', `stroke="${red}" stroke-width="3"`);
+    };
+    const shield = (pts, inner, crest) => H.p(pts, H.metal(gold)) + H.p(inner, H.f(org), 'stroke-width="2.6"') + H.star(crest[0], crest[1], 12, 5, 8, H.metal(gold), 'stroke-width="2.2"') + H.e(crest[0], crest[1], 4.5, 4.5, H.f(red), 'stroke-width="1.6"');
+    let s = '';
+    // Brave Shield halves as wings, spread up behind the shoulders
+    s += shield('M100 136 L44 44 L4 56 L-10 112 L14 168 L86 168 Z', 'M92 138 L46 56 L14 66 L2 110 L22 158 L82 158 Z', [42, 106]);
+    s += shield('M122 130 L166 34 L210 42 L226 98 L206 152 L132 160 Z', 'M128 132 L168 46 L202 52 L214 96 L198 142 L136 150 Z', [180, 92]);
+    // flowing hair behind the helmet
+    s += H.p('M58 72 C40 76 28 90 26 108 C36 100 46 98 58 100 C52 108 52 116 56 124 C62 110 70 102 80 98 Z', H.f(hair));
+    // tail
+    s += H.p('M80 184 C58 196 32 198 14 188 C28 184 44 178 60 168 Z', H.f(org));
+    // far arm: Dramon Destroyer pointing down
+    s += H.p('M84 150 C74 154 68 160 64 166', 'none', `stroke="${H.OUT}" stroke-width="16"`) + H.p('M84 150 C74 154 68 160 64 166', 'none', `stroke="${org}" stroke-width="10"`);
+    s += gauntlet(58, 172, 118, 26, 11) + claw3(51, 185, 116, 40, 7);
+    // legs with gold greaves and clawed feet
+    s += H.p('M86 178 L80 206 L108 206 L104 178 Z', H.metal(gold)) + H.p('M120 178 L118 206 L146 206 L138 178 Z', H.metal(gold));
+    s += H.p('M84 192 L106 192 M120 192 L142 192', 'none', `stroke="${red}" stroke-width="3"`);
+    s += H.claws([[108, 206, 10, 9], [101, 209, 50, 8], [146, 206, 10, 9], [139, 209, 50, 8]]);
+    // body: orange torso with a gold breastplate that runs up under the helmet (no gap at the neck)
+    s += H.e(112, 164, 34, 28, H.f(org));
+    s += H.p('M80 124 C94 116 130 116 144 124 L140 166 C130 176 94 176 84 166 Z', H.metal(gold));
+    s += H.p('M92 168 L132 168', 'none', 'stroke-width="2.4"');
+    s += H.star(112, 146, 11, 4.6, 8, H.f(red), 'stroke-width="2.2"') + H.e(112, 146, 4.2, 4.2, H.f('#ffd23a'), 'stroke-width="1.6"');
+    // shoulder pads bridge body, wings and head
+    s += H.p('M60 136 C60 120 76 114 92 120 L94 146 C80 150 66 148 60 136 Z', H.metal(gold));
+    s += H.p('M164 132 C164 116 148 110 132 116 L130 142 C144 146 158 144 164 132 Z', H.metal(gold));
+    // head: horns, then the helmet, then the orange snout under the helmet's nose guard
+    s += H.p('M68 44 C50 26 46 2 54 -18 C64 0 76 14 90 26 Z', H.metal(gold));        // back horn
+    s += H.p('M146 32 C156 10 174 -2 194 -4 C184 10 172 26 162 42 Z', H.metal(gold));  // side horn
+    s += H.p('M104 28 C102 6 110 -14 124 -28 C128 -6 126 12 122 30 Z', H.metal(gold)); // centre horn
+    s += H.p('M46 92 C44 52 74 26 110 26 C144 26 168 44 174 72 L166 96 C154 114 132 126 108 126 C78 126 48 116 46 92 Z', H.metal(gold));
+    s += H.p('M144 96 C160 90 190 92 208 104 C206 118 192 128 172 128 C158 128 146 120 142 110 Z', H.f(org)); // snout / jaw
+    s += H.p('M152 112 C170 122 192 120 204 110', 'none', 'stroke-width="3"') + H.p('M162 116 l3 8 l3 -7 Z M182 118 l3 8 l3 -8 Z M196 114 l3 7 l3 -7 Z', '#fff', 'stroke-width="1.8"');
+    s += H.p('M140 80 C158 74 186 80 206 98 C198 102 188 101 176 98 C164 95 152 97 142 102 Z', H.metal(gold)); // nose guard
+    s += H.e(202, 101, 2.6, 2, H.OUT, 'stroke="none"');
+    s += H.p('M80 80 C98 66 132 64 154 74 L148 100 C130 108 100 106 84 98 Z', navy); // visor opening
+    s += H.eye(104, 88, 11, 11, '#2ac85a', { look: 0.3 }) + H.eye(136, 86, 9, 10, '#2ac85a', { look: 0.3 });
+    s += H.p('M90 74 L118 82 M128 78 L150 72', 'none', 'stroke-width="5"'); // fierce brows on the visor rim
+    s += H.p('M58 62 C68 46 84 40 98 38', 'none', `stroke="${red}" stroke-width="5"`);
+    // near arm raised forward: the big Dramon Destroyer
+    s += H.p('M144 144 C156 150 166 152 176 152', 'none', `stroke="${H.OUT}" stroke-width="17"`) + H.p('M144 144 C156 150 166 152 176 152', 'none', `stroke="${org}" stroke-width="11"`);
+    s += gauntlet(190, 150, -6, 34, 14) + claw3(206, 148, -8, 64, 9);
+    s += H.blush(78, 108, 8, 4);
+    return ['-22 -36 304 262', s];
+  },
+});
