@@ -131,6 +131,22 @@ function renderTeacher() {
  *  MAIN LOOP
  * ===================================================================== */
 let last = performance.now();
+/* On GRAPHICS: HIGH, measure the first seconds after the page opens (skipping the first second of
+   loading). A device that can't reach ~30 frames per second is switched to LOW. (game.js does the
+   same check again at the start of each battle.) */
+const speed = { start: 0, frames: 0, done: false, t0: performance.now() };
+function checkSpeed(now) {
+  if (speed.done || now - speed.t0 < 1000) return;
+  if (S.prefs.quality !== "high") { speed.done = true; return; }
+  if (!speed.start) { speed.start = now; return; }
+  speed.frames++;
+  if (now - speed.start < 1500) return;
+  speed.done = true;
+  if ((now - speed.start) / speed.frames > 1000 / 30) {
+    S.prefs.quality = "low"; savePrefs(); applyQuality();
+    $("#btn-quality").textContent = "GRAPHICS: LOW";
+  }
+}
 const camTarget = new V3();
 const CAM = { x: 13, y: 13, z: 13, tx: -6, ty: 2, tz: -30, // battle camera (landscape) ...
   phone: { x: 4, y: 14, z: 22, tx: -1, ty: 5, tz: -34 } };   // ... and on a phone held upright
@@ -138,6 +154,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (!renderer || mode === "idle" || document.hidden) return;
+  checkSpeed(now);
   const t = now / 1000;
   const speed = mode === "game" && !G.paused ? (G.me && G.me.freezeT > 0 ? 8 : 40) : 4;
   const a = stars.geometry.attributes.position;
