@@ -12,7 +12,7 @@
  *    MECHS (partners), buildMech, newAnim, aimMech, fireMech, animateMech,
  *    ENEMY_TYPES, ENEMY_SIZES, buildEnemy, animateEnemy,
  *    BOSSES, buildBoss, animateBoss, hitFlash, buildShot, animateShot,
- *    portrait, portraitURL, artReady, MS, MB, GLOW
+ *    portrait, portraitURL, artReady, setQuality, MS, MB, GLOW
  * ===================================================================== */
 (function () {
 "use strict";
@@ -44,7 +44,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
  *  Prices must match MECH_PRICES in apps-script/Code.gs.
  * ===================================================================== */
 const MECHS = [
-  { id: "starter", name: "AGUMON", evo: "WARGREYMON", art: "agumon", evoArt: "wargreymon", from: "Vaccine · Reptile", price: 0, hp: 5, startShield: true,
+  { id: "starter", name: "AGUMON", evo: "WARGREYMON", art: "agumon", evoArt: "wargreymon", evoH: 5.4, from: "Vaccine · Reptile", price: 0, hp: 5, startShield: true,
     plus: "Balanced. Starts every stage with a shield.", minus: "", colors: { main: 0xff9a2a, acc: 0xffd23a } },
   { id: "frostpup", name: "GABUMON", evo: "METALGARURUMON", art: "gabumon", evoArt: "metalgarurumon", from: "Data · Reptile", price: 300, hp: 4, coinMult: 1.2,
     plus: "Coins +20%.", minus: "Only 4 ♥", colors: { main: 0x7aa6e0, acc: 0x9ad8ff } },
@@ -339,14 +339,16 @@ function propCanvas(id) {
  *  PARTNER: build + animate (same API as the old mech code)
  *  The partner faces right; attacks are a lunge to the right.
  * ===================================================================== */
-const PARTNER_H = 3.4, EVO_H = 4.3, KNIGHT_H = 4.1, PARTNER_RES = 384;
+const PARTNER_H = 3.4, EVO_H = 4.3, KNIGHT_H = 4.1;
+let RES = 1; // picture resolution: 2 on GRAPHICS: HIGH (sharper), 1 on LOW (setQuality)
+function setQuality(high) { RES = high ? 2 : 1; }
 function partnerFrames(def, skin) {
   const sk = skin && skin.colors ? skin : null;
-  const a = raster(def.art, { h: PARTNER_RES, skin: sk }), as = raster(def.art, { h: PARTNER_RES, sil: true });
+  const r = 384 * RES, a = raster(def.art, { h: r, skin: sk }), as = raster(def.art, { h: r, sil: true });
   const evoId = def.evoArt || def.art;
-  const e = raster(evoId, { h: PARTNER_RES, skin: sk }), es = raster(evoId, { h: PARTNER_RES, sil: true });
+  const e = raster(evoId, { h: r, skin: sk }), es = raster(evoId, { h: r, sil: true });
   const h = def.knight ? KNIGHT_H : PARTNER_H;
-  return { a, as, e, es, h, eh: def.evoArt ? EVO_H : h };
+  return { a, as, e, es, h, eh: def.evoArt ? def.evoH || EVO_H : h };
 }
 function buildMech(def, skin) {
   const fr = partnerFrames(def, skin);
@@ -415,7 +417,7 @@ function animateMech(mesh, anim, dt) {
  * ===================================================================== */
 function buildEnemy(type) {
   const def = ENEMY_TYPES[type];
-  const a = raster(type, { h: 256, flip: true }), s = raster(type, { h: 256, flip: true, sil: true });
+  const a = raster(type, { h: 256 * RES, flip: true }), s = raster(type, { h: 256 * RES, flip: true, sil: true });
   const rig = spriteRig(a, s, def.h);
   rig.def = def;
   rig.root.userData.top = def.h + 0.6;
@@ -446,7 +448,7 @@ function animateEnemy(mesh, st, dt, time) {
 const BOSS_SIZE = 19;
 function buildBoss(idx) {
   const def = BOSSES[idx % BOSSES.length];
-  const a = raster(def.id, { h: 512, flip: true }), s = raster(def.id, { h: 512, flip: true, sil: true });
+  const a = raster(def.id, { h: 512 * RES, flip: true }), s = raster(def.id, { h: 512 * RES, flip: true, sil: true });
   const rig = spriteRig(a, s, BOSS_SIZE * (def.sizeMul || 1), { centerY: 0.5 });
   rig.def = def;
   const am = new T.SpriteMaterial({ map: glowTexture(), color: def.glow || 0xff3a6a, transparent: true, opacity: 0.12, depthWrite: false, blending: ADD });
@@ -516,5 +518,5 @@ for (const m of MECHS) { svgImage(m.art); if (m.evoArt) svgImage(m.evoArt); }
 for (const id of Object.keys(ENEMY_TYPES)) svgImage(id);
 
 window.MODELS = { MECHS, buildMech, newAnim, aimMech, fireMech, animateMech, ENEMY_TYPES, ENEMY_SIZES, buildEnemy, animateEnemy,
-  BOSSES, buildBoss, animateBoss, hitFlash, buildShot, animateShot, portrait, portraitURL, artReady, raster, MS, MB, GLOW };
+  BOSSES, buildBoss, animateBoss, hitFlash, buildShot, animateShot, portrait, portraitURL, artReady, raster, setQuality, MS, MB, GLOW };
 })();

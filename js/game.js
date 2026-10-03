@@ -588,11 +588,12 @@ function update(dt) {
   if (G.role === "client") { G.statsT -= dt; if (G.statsT <= 0) { G.statsT = 2; netSend({ r: "stats", wpm: Math.round(currentWpm() * 10) / 10, acc: currentAcc() }); } }
   if (G.role === "host") { G.me.wpm = Math.round(currentWpm() * 10) / 10; G.me.acc = currentAcc(); }
 
-  if (!G.perfChecked && G.time > 1) {
-    G.perfT += dt; G.perfN++;
-    if (G.perfT > 4) {
+  if (!G.perfChecked && G.time > 1) { // slow device? measure ~2 real seconds of frames, then drop to LOW graphics
+    const now = performance.now();
+    if (!G.perfT) G.perfT = now; else G.perfN++;
+    if (now - G.perfT > 2000) {
       G.perfChecked = true;
-      if (G.perfT / G.perfN > 1 / 32 && S.prefs.quality === "high") { S.prefs.quality = "low"; savePrefs(); applyQuality(); floater(window.innerWidth / 2, 120, "Graphics set to LOW for smoother play", "#8fe3ff"); }
+      if ((now - G.perfT) / G.perfN > 1000 / 32 && S.prefs.quality === "high") { S.prefs.quality = "low"; savePrefs(); applyQuality(); floater(window.innerWidth / 2, 120, "Graphics set to LOW for smoother play", "#8fe3ff"); }
     }
   }
   $("#hud-wpm").textContent = Math.round(currentWpm());

@@ -14,6 +14,34 @@ try {
   document.body.insertAdjacentHTML("beforeend", '<div class="note" style="position:fixed;bottom:10px;left:10px;right:10px;z-index:99">This browser cannot show 3D graphics (WebGL is off). Please try Chrome or Edge.</div>');
 }
 const scene = new THREE.Scene();
+/* GRAPHICS: HIGH adds post-processing: soft bloom on bright things (beams, sparkles, evolution),
+   a gentle colour grade and a vignette. It needs WebGL2 and lib/postfx.js; LOW renders directly. */
+const GRADE = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+      c.rgb = mix(vec3(l), c.rgb, 1.12);                                   // a little more colour
+      c.rgb = (c.rgb - 0.5) * 1.06 + 0.5;                                  // a little more contrast
+      c.rgb += vec3(0.035, 0.015, -0.02) * smoothstep(0.4, 1.0, l);        // warm highlights
+      c.rgb += vec3(-0.02, 0.0, 0.035) * (1.0 - smoothstep(0.0, 0.45, l)); // cool shadows
+      vec2 d = vUv - 0.5; c.rgb *= 1.0 - 0.38 * dot(d, d) * 2.2;          // soft vignette
+      gl_FragColor = c;
+    }` };
+let composer = null;
+function setPostFx(on) {
+  if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer = null; }
+  if (!on || !renderer || !renderer.capabilities.isWebGL2 || !THREE.EffectComposer || !THREE.UnrealBloomPass) return;
+  try {
+    const rt = new THREE.WebGLRenderTarget(16, 16, { samples: 4, type: THREE.HalfFloatType }); // samples = anti-aliasing
+    composer = new THREE.EffectComposer(renderer, rt);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(512, 512), 0.32, 0.45, 0.95));
+    composer.addPass(new THREE.ShaderPass(GRADE));
+  } catch (e) { composer = null; }
+}
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
 scene.fog = new THREE.Fog(0x9ad8ff, 70, 230);
 function setSky(top, mid, bottom) {
@@ -86,7 +114,11 @@ function applyQuality() {
   if (!renderer) return;
   const high = S.prefs.quality === "high";
   renderer.setPixelRatio(high ? Math.min(window.devicePixelRatio || 1, 2) : Math.min(1, (window.devicePixelRatio || 1) * 0.75));
+  MODELS.setQuality(high);
+  setPostFx(high);
+  if (previewMechId) setPreviewMech(previewMechId.split("|")[0], previewMechId.split("|")[1]);
   buildStars(high ? 900 : 350);
+  if (envId) { const id = envId, ev = envEvent; envId = null; setEnvironment(id, ev); } // grass and flowers only on HIGH
   resize();
 }
 
@@ -162,7 +194,7 @@ function updateEffects(dt) {
 let mode = "hangar"; // hangar | game | idle
 let previewMech = null, previewMechId = null, previewAnim = MODELS.newAnim();
 function setPreviewMech(id, skinId) {
-  const key = id + "|" + (skinId || "default");
+  const key = id + "|" + (skinId || "default") + "|" + S.prefs.quality; // HIGH draws sharper pictures
   if (previewMechId === key && previewMech) return;
   if (previewMech) scene.remove(previewMech);
   previewMech = MODELS.buildMech(MECH_BY_ID[id], SKIN_BY_ID[skinId]); previewMechId = key;
@@ -188,6 +220,7 @@ function resize() {
   if (!renderer) return;
   const { w, h } = viewSize();
   renderer.setSize(w, h, false);
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
   canvas.style.height = h + "px";
   $("#labels").style.height = h + "px";
   camera.aspect = w / h;
@@ -246,6 +279,9 @@ const PROP_ART = {
   crystal: [12, 22, (x) => { blob(x, poly([[6, 0.8], [11, 8], [9, 21], [3, 21], [1, 8]]), 0x7ae8ff, 0, 21); x.strokeStyle = "rgba(255,255,255,.8)"; x.beginPath(); x.moveTo(6, 3); x.lineTo(5, 18); x.stroke(); }],
   tower: [20, 46, (x) => { blob(x, poly([[2, 4], [18, 4], [18, 45.5], [2, 45.5]]), 0x3a3e68, 4, 46); for (let y = 8; y < 44; y += 5) for (let i = 4; i < 16; i += 4) { x.fillStyle = Math.random() < 0.6 ? "#5affd0" : "#ff5ad8"; x.fillRect(i, y, 2, 2); } blob(x, poly([[9, 0.5], [11, 0.5], [11, 4], [9, 4]]), 0x3a3e68, 0, 4); }],
   pillar: [12, 40, (x) => { blob(x, poly([[2, 3], [10, 3], [10, 39.5], [2, 39.5]]), 0x4a3a5a, 3, 40); x.fillStyle = "#ff3a5a"; x.fillRect(2.5, 10, 7, 1.4); x.fillRect(2.5, 26, 7, 1.4); blob(x, ellp(6, 2.6, 4, 2.2), 0xff3a5a, 0, 5); }],
+  grass: [14, 10, (x) => { x.strokeStyle = "rgba(30,90,30,.6)"; for (const [a, b, c] of [[2, 9.5, 4], [5, 9.5, 1], [7, 9.5, 6], [9, 9.5, 2], [12, 9.5, 8]]) blob(x, (p) => { p.moveTo(a - 1.4, b); p.quadraticCurveTo(a, b - 6, c * 0.4 + a * 0.6, b - 8.5); p.quadraticCurveTo(a + 0.7, b - 4, a + 1.4, b); p.closePath(); }, 0x3fa83a, 1, 10); }],
+  flower: [10, 14, (x) => { x.strokeStyle = "#3a8a3a"; x.lineWidth = 1.2; x.beginPath(); x.moveTo(5, 13.5); x.quadraticCurveTo(4, 9, 5, 5); x.stroke(); x.strokeStyle = OUT; x.lineWidth = 0.8;
+    const c = [0xff8ab4, 0xffe066, 0xffffff, 0xb08aff][Math.random() * 4 | 0]; for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28; blob(x, circ(5 + Math.cos(a) * 2, 4.5 + Math.sin(a) * 2, 1.7), c, 1, 8); } blob(x, circ(5, 4.5, 1.2), 0xffb02a, 3, 6); }],
   cloud: [40, 14, (x) => { x.strokeStyle = "rgba(120,150,200,.55)"; blob(x, (p) => { p.moveTo(4, 13); p.bezierCurveTo(-1, 13, 0, 6, 6, 7); p.bezierCurveTo(7, 1, 16, 0, 19, 4); p.bezierCurveTo(23, -1, 33, 1, 32, 6); p.bezierCurveTo(39, 5, 41, 13, 35, 13); p.closePath(); }, 0xeef6ff, 0, 14); }],
 };
 const propCvCache = {};
@@ -253,15 +289,19 @@ function propCv(id) { if (!propCvCache[id]) { const [w, h, draw] = PROP_ART[id];
 function skyline(kind) { // far horizon: two layers of soft hills (or city blocks)
   const c = document.createElement("canvas"); c.width = 1024; c.height = 192;
   const x = c.getContext("2d");
-  const col = { plains: ["#7ab8e8", "#5aa87a"], beach: ["#8ac8f0", "#3a9ae0"], forest: ["#2a5a6a", "#1a4a40"], desert: ["#d8946a", "#b86a4a"], city: ["#2a2050", "#1a1438"], dark: ["#3a0a3a", "#1a061e"] }[kind];
-  for (let layer = 0; layer < 2; layer++) {
+  const col = { plains: ["#9ccbe8", "#7ab89a", "#4f9a62"], beach: ["#a8d8f4", "#8ac8f0", "#3a9ae0"], forest: ["#3a6a7a", "#2a5a6a", "#1a4a40"], desert: ["#e8b08a", "#d8946a", "#b86a4a"], city: ["#3a3070", "#2a2050", "#1a1438"], dark: ["#4a1a4a", "#3a0a3a", "#1a061e"] }[kind];
+  for (let layer = 0; layer < 3; layer++) {
+    if (layer) { // haze between the layers
+      const hz = x.createLinearGradient(0, 60, 0, 192); hz.addColorStop(0, "rgba(255,255,255,0)"); hz.addColorStop(1, "rgba(235,245,255,0.35)");
+      x.fillStyle = hz; x.fillRect(0, 0, 1024, 192);
+    }
     x.fillStyle = col[layer];
     x.beginPath(); x.moveTo(0, 192);
     if (kind === "city") {
       let xx = 0; while (xx < 1024) { const w = 24 + Math.random() * 40, h = 40 + Math.random() * 110 - layer * 30; x.lineTo(xx, 192 - h); x.lineTo(xx + w, 192 - h); xx += w; }
     } else if (kind === "beach" && layer === 1) { x.lineTo(0, 160); x.lineTo(1024, 160); }
     else {
-      const n = 6 + layer * 4, base = 192 - (kind === "dark" ? 110 : 80) + layer * 30;
+      const n = 4 + layer * 4, base = 192 - (kind === "dark" ? 120 : 100) + layer * 30;
       x.lineTo(0, base);
       for (let i = 0; i < n; i++) { const x0 = i * 1024 / n, x1 = (i + 1) * 1024 / n, peak = base - 20 - Math.random() * (kind === "dark" ? 70 : 45); x.bezierCurveTo(x0 + (x1 - x0) * 0.3, peak, x0 + (x1 - x0) * 0.7, peak, x1, base); }
     }
@@ -290,7 +330,7 @@ const ENVS = {
     tile: ["#1a0e22", [["#2a1634", 50, 2, 1], ["#ff3a5a", 3, 3, 1], ["#5affd0", 2, 1, 1]], true, "rgba(255,60,120,.6)"],
     props: [["pillar", 12], ["crystal", 8], ["rock", 6]], clouds: 0 },
 };
-let envGroup = null, envId = null, envEvent = null, envProps = [], envLanterns = [], envSnow = null, envDecor = {}, envGround = null, envClouds = [], fireworkT = 0;
+let envRays = null, envGroup = null, envId = null, envEvent = null, envProps = [], envLanterns = [], envSnow = null, envDecor = {}, envGround = null, envClouds = [], fireworkT = 0;
 function radialTexture(inner, outer) {
   const c = document.createElement("canvas"); c.width = c.height = 128;
   const x = c.getContext("2d"), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -309,6 +349,7 @@ function setEnvironment(id, eventId) {
   if (envId === id && envEvent === (eventId || null)) return;
   envId = id; envEvent = eventId || null;
   if (envGroup) scene.remove(envGroup);
+  if (envRays) { planet.remove(envRays); envRays = null; }
   envGroup = new THREE.Group(); envProps = []; envLanterns = []; envSnow = null; envDecor = {}; envClouds = [];
   scene.add(envGroup);
   const E = ENVS[id];
@@ -347,6 +388,37 @@ function setEnvironment(id, eventId) {
     sp.position.set(rand(-420, 200), rand(70, 150), rand(-520, -380));
     envGroup.add(sp); envClouds.push(sp);
   }
+  // GRAPHICS: HIGH: grass and flowers on the green battlefields
+  if (S.prefs.quality === "high" && (id === "plains" || id === "forest")) for (let i = 0; i < 140; i++) {
+    const kind = Math.random() < 0.7 ? "grass" : "flower", cv = propCv(kind);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(cv), transparent: true, alphaTest: 0.05 }));
+    const s = rand(0.03, 0.05) * (kind === "flower" ? 0.8 : 1); sp.center.set(0.5, 0); sp.scale.set(cv.width * s, cv.height * s, 1);
+    sp.position.set(rand(-60, 40), 0, rand(-420, 18)); envGroup.add(sp); envProps.push(sp);
+  }
+  // soft light rays around the sun
+  if (!E.moon) {
+    const rc = document.createElement("canvas"); rc.width = rc.height = 256; const rx = rc.getContext("2d");
+    rx.translate(128, 128);
+    for (let i = 0; i < 14; i++) {
+      rx.rotate(Math.PI * 2 / 14 + Math.random() * 0.2);
+      const g = rx.createLinearGradient(0, 0, 128, 0); g.addColorStop(0, "rgba(255,250,220,0.5)"); g.addColorStop(1, "rgba(255,250,220,0)");
+      rx.fillStyle = g; rx.beginPath(); rx.moveTo(0, 0); rx.lineTo(128, -9 - Math.random() * 8); rx.lineTo(128, 9 + Math.random() * 8); rx.closePath(); rx.fill();
+    }
+    const rays = new THREE.Sprite(new THREE.SpriteMaterial({ map: canTex(rc), transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending, opacity: 0.55 }));
+    rays.scale.setScalar(520); planet.add(rays); envRays = rays;
+  }
+  // big soft light and shade patches on the ground, so it doesn't look like one repeated tile
+  const mc = document.createElement("canvas"); mc.width = mc.height = 512; const mx = mc.getContext("2d");
+  for (let i = 0; i < 40; i++) {
+    const px = Math.random() * 512, py = Math.random() * 512, r = 40 + Math.random() * 90, light = Math.random() < 0.5;
+    for (const [ox, oy] of [[0, 0], [512, 0], [-512, 0], [0, 512], [0, -512]]) {
+      const g = mx.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, r);
+      g.addColorStop(0, light ? "rgba(255,255,220,0.22)" : "rgba(0,40,30,0.18)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      mx.fillStyle = g; mx.fillRect(px + ox - r, py + oy - r, r * 2, r * 2);
+    }
+  }
+  const macro = new THREE.Mesh(new THREE.PlaneGeometry(600, 520), new THREE.MeshBasicMaterial({ map: canTex(mc, [600 / 120, 520 / 120]), transparent: true, depthWrite: false }));
+  macro.rotation.x = -Math.PI / 2; macro.position.set(0, 0.02, -240); envGroup.add(macro); envGround.userData.macro = macro;
   styleStars();
   // festival decorations (see EVENTS[...].decor in js/progress.js)
   const decor = eventId && typeof EVENTS !== "undefined" && EVENTS[eventId] ? EVENTS[eventId].decor || {} : {};
@@ -398,6 +470,7 @@ function updateEnvironment(dt, speed) {
   if (!envGroup) return;
   if (envGround) {
     const m = envGround.material.map; m.offset.y += speed * 0.6 * dt / TILE; if (m.offset.y > 1000) m.offset.y -= 1000;
+    if (envGround.userData.macro) { const mm = envGround.userData.macro.material.map; mm.offset.y += speed * 0.6 * dt / 120; if (mm.offset.y > 1000) mm.offset.y -= 1000; }
     if (envGround.userData.sea) envGround.userData.sea.material.map.offset.x += dt * 0.05;
   }
   for (const p of envProps) { p.position.z += speed * 0.6 * dt; if (p.position.z > 20) p.position.z -= 440; }

@@ -184,7 +184,7 @@ function frame(now) {
       MODELS.animateMech(previewMech, previewAnim, dt);
     }
   }
-  renderer.render(scene, camera);
+  if (composer) composer.render(); else renderer.render(scene, camera);
 }
 
 /* =====================================================================
