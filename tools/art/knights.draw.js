@@ -56,10 +56,10 @@ module.exports = {
   omnimon(H) {
     const white = '#f4f6fb', gold = '#f2c23a', red = '#d8343a', orange = '#ffb03a', blue = '#7aa6e0';
     const front =
-      // WarGreymon head on the left arm, sword out of its mouth
-      sword(H, 50, 170, 10, 200, '#e8eef8') + H.e(46, 160, 22, 18, H.metal(orange)) + H.p('M30 150 C36 140 56 140 62 150 Z', H.metal(gold)) + H.e(52, 160, 4, 4, '#2ac85a')
-      // MetalGarurumon head (cannon) on the right arm
-      + H.e(170, 160, 22, 18, H.metal(blue)) + H.p('M182 152 L204 156 L204 168 L182 170 Z', H.metal('#d8e0ec')) + H.e(204, 162, 3, 5, '#7ad0ff') + H.e(164, 154, 4, 4, '#ffd23a');
+      // MetalGarurumon head (cannon) on the left arm (screen left)
+      H.e(46, 160, 22, 18, H.metal(blue)) + H.p('M34 152 L12 156 L12 168 L34 170 Z', H.metal('#d8e0ec')) + H.e(12, 162, 3, 5, '#7ad0ff') + H.e(52, 154, 4, 4, '#ffd23a')
+      // WarGreymon head on the right arm (screen right), sword out of its mouth
+      + sword(H, 166, 170, 206, 200, '#e8eef8') + H.e(170, 160, 22, 18, H.metal(orange)) + H.p('M154 150 C160 140 180 140 186 150 Z', H.metal(gold)) + H.e(176, 160, 4, 4, '#2ac85a');
     return ['-16 -26 240 236', knight(H, {
       armor: white, trim: gold, eye: '#3a82e0', cape: red, crown: '#f4f6fb',
       back: H.p('M70 120 C40 150 30 190 40 210 L176 210 C186 190 176 150 146 120 Z', H.f(white)),
