@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2 232 196">
+  <defs>
+    <linearGradient id="sk" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#ffc24a"/><stop offset="1" stop-color="#ff9a1e"/></linearGradient>
+    <radialGradient id="eye" cx="0.45" cy="0.65" r="0.6"><stop offset="0" stop-color="#9af06a"/><stop offset="0.6" stop-color="#3cc23c"/><stop offset="1" stop-color="#1c7a24"/></radialGradient>
+  </defs>
+  <g stroke="#5a2a10" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(104 122) scale(0.68) translate(-104 -122)">
+    <!-- chubby tail -->
+    <path d="M70 180 C50 178 30 186 18 202 C34 206 56 204 78 198 Z" fill="url(#sk)"/>
+    <!-- back foot -->
+    <path d="M118 206 C118 196 130 192 142 194 C154 196 160 204 158 212 C156 218 148 220 138 220 L126 220 C120 220 118 214 118 206 Z" fill="#f58a1a"/>
+    <path d="M144 218 q4 5 9 4 M154 212 q5 3 9 0" fill="none" stroke="#5a2a10" stroke-width="2.6"/>
+    <!-- round body -->
+    <ellipse cx="100" cy="172" rx="40" ry="38" fill="url(#sk)"/>
+    <path d="M120 142 C136 156 140 182 128 202 C140 196 146 180 142 164 C140 154 132 146 120 142 Z" fill="#f58a1a" stroke="none"/>
+    <path d="M76 156 C72 166 72 178 76 188" fill="none" stroke="#ffe0a0" stroke-width="5"/>
+    <!-- front foot -->
+    <path d="M62 206 C62 194 76 190 90 192 C104 194 112 202 110 212 C108 220 98 222 86 222 L72 222 C64 222 62 214 62 206 Z" fill="url(#sk)"/>
+    <path d="M92 220 q4 6 10 4 M104 214 q6 3 10 -1" fill="none" stroke="#5a2a10" stroke-width="2.6"/>
+    <!-- little arms held up, with three soft claws -->
+    <path d="M128 150 C140 146 150 140 156 132 C164 130 170 136 168 144 C164 152 152 158 136 162 Z" fill="url(#sk)"/>
+    <path d="M160 130 c3 -6 8 -8 12 -6 c-2 4 -5 7 -9 9 Z M168 138 c6 -3 11 -2 13 2 c-4 2 -8 3 -12 2 Z M164 146 c5 0 9 3 10 7 c-4 0 -8 -1 -11 -4 Z" fill="#ffffff" stroke-width="2.4"/>
+    <path d="M72 150 C62 146 54 140 50 132 C44 130 38 136 40 144 C44 152 56 158 72 162 Z" fill="url(#sk)"/>
+    <path d="M46 130 c-3 -6 -8 -8 -12 -6 c2 4 5 7 9 9 Z M40 138 c-6 -3 -11 -2 -13 2 c4 2 8 3 12 2 Z M44 146 c-5 0 -9 3 -10 7 c4 0 8 -1 11 -4 Z" fill="#ffffff" stroke-width="2.4"/>
+    </g>
+    <g transform="translate(112 72) scale(1.12) translate(-112 -72)">
+    <!-- BIG round head with a short snout -->
+    <path d="M28 84 C26 40 60 12 106 12 C148 12 174 34 182 60 C198 62 210 74 210 88 C210 104 196 114 176 118 C150 128 82 130 56 120 C36 112 28 100 28 84 Z" fill="url(#sk)"/>
+    <path d="M44 112 C70 126 140 128 182 116 C170 124 140 130 104 130 C78 130 56 124 44 112 Z" fill="#f58a1a" stroke="none"/>
+    <path d="M54 34 C70 22 92 18 110 20" fill="none" stroke="#fff0c0" stroke-width="7"/>
+    <!-- happy open mouth with a tongue and two tiny fangs -->
+    <path d="M116 100 C136 108 166 106 192 96 C188 112 170 120 150 120 C134 120 120 112 116 100 Z" fill="#7a1a28"/>
+    <path d="M136 114 C146 108 166 108 176 112 C168 119 146 121 136 114 Z" fill="#ff7a96" stroke="none"/>
+    <path d="M128 104 l4 7 l4 -6 Z M178 101 l3 6 l4 -7 Z" fill="#ffffff" stroke-width="1.8"/>
+    <ellipse cx="200" cy="74" rx="2.6" ry="2" fill="#5a2a10" stroke="none"/>
+    <!-- rosy cheeks -->
+    <ellipse cx="66" cy="104" rx="11" ry="6" fill="#ff7a8a" stroke="none" opacity="0.45"/>
+    <ellipse cx="172" cy="96" rx="8" ry="5" fill="#ff7a8a" stroke="none" opacity="0.45"/>
+    <!-- huge sparkly eyes -->
+    <ellipse cx="94" cy="70" rx="21" ry="26" fill="#ffffff"/>
+    <ellipse cx="98" cy="74" rx="17" ry="21" fill="url(#eye)" stroke="none"/>
+    <ellipse cx="101" cy="77" rx="8" ry="12" fill="#101010" stroke="none"/>
+    <ellipse cx="90" cy="64" rx="6" ry="6.5" fill="#ffffff" stroke="none"/>
+    <ellipse cx="107" cy="85" rx="3" ry="3" fill="#ffffff" stroke="none"/>
+    <ellipse cx="94" cy="70" rx="21" ry="26" fill="none"/>
+    <ellipse cx="148" cy="66" rx="14" ry="21" fill="#ffffff"/>
+    <ellipse cx="151" cy="69" rx="11" ry="17" fill="url(#eye)" stroke="none"/>
+    <ellipse cx="153" cy="72" rx="5" ry="9" fill="#101010" stroke="none"/>
+    <ellipse cx="145" cy="61" rx="4" ry="4.5" fill="#ffffff" stroke="none"/>
+    <ellipse cx="157" cy="79" rx="2" ry="2" fill="#ffffff" stroke="none"/>
+    <ellipse cx="148" cy="66" rx="14" ry="21" fill="none"/>
+    </g>
+  </g>
+</svg>

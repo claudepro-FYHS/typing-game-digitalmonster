@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-46 -12 342 222">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset="0.35" stop-color="#ffd84a"/><stop offset="1" stop-color="#e8a820"/></linearGradient>
+    <linearGradient id="sk" x1="0" y1="0" x2="0.5" y2="1"><stop offset="0" stop-color="#ffc24a"/><stop offset="1" stop-color="#ff9a1e"/></linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#ff9a58"/><stop offset="1" stop-color="#ee5a24"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b8c2d6"/></linearGradient>
+    <radialGradient id="eye" cx="0.45" cy="0.65" r="0.6"><stop offset="0" stop-color="#9af06a"/><stop offset="0.6" stop-color="#3cc23c"/><stop offset="1" stop-color="#1c7a24"/></radialGradient>
+    <g id="crest"><path d="M0 -12 L3 -5 L10 -7 L6 -1 L12 3 L4 4 L3 11 L-2 6 L-8 9 L-6 2 L-12 -2 L-5 -4 L-6 -11 L-1 -6 Z" fill="#ffe066" stroke="#8a4410" stroke-width="2"/><circle r="3.6" fill="#ee5a24" stroke="#8a4410" stroke-width="1.6"/></g>
+  </defs>
+  <g stroke="#5a2a10" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(125 128) scale(1.05) translate(-125 -128)">
+      <g transform="translate(-26 0) rotate(-14 80 120)">    <!-- Brave Shield wings: two soft-cornered plates, opened -->
+    <path d="M82 120 C70 104 50 80 36 62 C28 54 18 58 16 68 L10 122 C10 134 16 144 26 150 L56 168 C66 172 74 166 78 156 Z" fill="#e8a820"/>
+    <path d="M78 122 C66 108 50 88 38 72 C32 66 24 70 23 78 L18 122 C18 132 22 140 30 144 L56 158 C64 162 70 158 72 150 Z" fill="url(#shield)"/>
+    <use href="#crest" x="44" y="112"/>
+      </g>
+      <g transform="translate(26 0) rotate(14 170 120)">    <path d="M168 120 C180 104 200 80 214 62 C222 54 232 58 234 68 L240 122 C240 134 234 144 224 150 L194 168 C184 172 176 166 172 156 Z" fill="#e8a820"/>
+    <path d="M172 122 C184 108 200 88 212 72 C218 66 226 70 227 78 L232 122 C232 132 228 140 220 144 L194 158 C186 162 180 158 178 150 Z" fill="url(#shield)"/>
+    <use href="#crest" x="206" y="112"/>
+      </g>
+    </g>
+    <g transform="translate(125 140) scale(0.66) translate(-125 -140)">
+    <!-- stubby legs with gold boots and soft claws -->
+    <path d="M92 214 C92 200 104 196 116 198 L118 236 C110 240 96 240 90 236 Z" fill="url(#gold)"/>
+    <path d="M134 198 C146 196 158 200 158 214 L160 236 C154 240 140 240 132 236 Z" fill="url(#gold)"/>
+    <path d="M84 236 C84 228 96 226 110 226 C120 226 124 232 122 240 C120 246 112 248 100 248 L90 248 C84 248 82 242 84 236 Z" fill="url(#gold)"/>
+    <path d="M130 240 C128 232 132 226 142 226 C156 226 168 228 168 236 C168 242 166 248 160 248 L148 248 C138 248 130 246 130 240 Z" fill="url(#gold)"/>
+    <path d="M110 247 c2 5 7 7 11 5 c-3 -3 -5 -5 -6 -8 Z M160 247 c2 5 7 7 11 5 c-3 -3 -5 -5 -6 -8 Z" fill="url(#steel)" stroke-width="2.4"/>
+    <!-- round body: orange belly, gold chest plate, belt -->
+    <ellipse cx="125" cy="186" rx="38" ry="30" fill="url(#sk)"/>
+    <path d="M90 160 C100 150 150 150 160 160 C164 172 158 186 146 192 C134 198 116 198 104 192 C92 186 86 172 90 160 Z" fill="url(#gold)"/>
+    <use href="#crest" x="125" y="174"/>
+    <path d="M92 204 C110 210 140 210 158 204 L158 214 C140 220 110 220 92 214 Z" fill="url(#gold)"/>
+    <!-- little arms with big round gauntlets and three short claws -->
+    <path d="M84 170 C70 172 60 180 58 192 C58 204 70 210 80 206 C90 202 94 190 92 178 Z" fill="url(#gold)"/>
+    <path d="M60 200 c-8 4 -12 10 -12 18 c6 -2 10 -6 13 -12 Z M68 206 c-4 8 -4 14 -1 20 c4 -4 6 -10 6 -16 Z M78 206 c0 8 3 14 8 18 c2 -6 0 -12 -3 -17 Z" fill="url(#steel)" stroke-width="2.4"/>
+    <path d="M166 170 C180 172 190 180 192 192 C192 204 180 210 170 206 C160 202 156 190 158 178 Z" fill="url(#gold)"/>
+    <path d="M190 200 c8 4 12 10 12 18 c-6 -2 -10 -6 -13 -12 Z M182 206 c4 8 4 14 1 20 c-4 -4 -6 -10 -6 -16 Z M172 206 c0 8 -3 14 -8 18 c-2 -6 0 -12 3 -17 Z" fill="url(#steel)" stroke-width="2.4"/>
+    </g>
+    <g transform="translate(126 82) scale(1.14) translate(-126 -82)">
+    <!-- hair tufts -->
+    <path d="M70 92 C56 100 50 116 54 132 C62 122 70 116 80 112 Z M180 92 C194 100 200 116 196 132 C188 122 180 116 170 112 Z" fill="#ffd25a"/>
+    <!-- BIG head: round gold helmet, orange face with a small snout -->
+    <path d="M62 92 C58 50 90 22 126 22 C162 22 194 50 190 92 C188 112 176 128 158 136 L94 136 C76 128 64 112 62 92 Z" fill="url(#gold)"/>
+    <path d="M82 40 C96 30 114 26 130 28" fill="none" stroke="#fffbe0" stroke-width="7"/>
+    <path d="M78 96 C78 82 98 74 126 74 C154 74 174 82 174 96 C174 116 156 132 126 132 C96 132 78 116 78 96 Z" fill="url(#sk)"/>
+    <!-- three short rounded horns -->
+    <path d="M114 26 C112 12 118 2 126 0 C134 2 140 12 138 26 Z" fill="url(#gold)"/>
+    <path d="M78 46 C64 38 58 26 60 16 C72 18 82 28 88 40 Z" fill="url(#gold)"/>
+    <path d="M174 46 C188 38 194 26 192 16 C180 18 170 28 164 40 Z" fill="url(#gold)"/>
+    <!-- big determined eyes -->
+    <ellipse cx="104" cy="96" rx="15" ry="18" fill="#ffffff"/>
+    <ellipse cx="106" cy="99" rx="12" ry="14.5" fill="url(#eye)" stroke="none"/>
+    <ellipse cx="108" cy="101" rx="5.5" ry="8.5" fill="#101010" stroke="none"/>
+    <ellipse cx="100" cy="91" rx="4.5" ry="4.5" fill="#ffffff" stroke="none"/>
+    <ellipse cx="104" cy="96" rx="15" ry="18" fill="none"/>
+    <ellipse cx="148" cy="96" rx="15" ry="18" fill="#ffffff"/>
+    <ellipse cx="146" cy="99" rx="12" ry="14.5" fill="url(#eye)" stroke="none"/>
+    <ellipse cx="144" cy="101" rx="5.5" ry="8.5" fill="#101010" stroke="none"/>
+    <ellipse cx="140" cy="91" rx="4.5" ry="4.5" fill="#ffffff" stroke="none"/>
+    <ellipse cx="148" cy="96" rx="15" ry="18" fill="none"/>
+    <path d="M88 76 L118 84 M164 76 L134 84" fill="none" stroke-width="4"/>
+    <!-- little dragon muzzle: nostrils + confident grin with tiny fangs, rosy cheeks -->
+    <path d="M100 116 C100 106 112 102 126 102 C140 102 152 106 152 116 C152 126 140 132 126 132 C112 132 100 126 100 116 Z" fill="#ffcf72"/>
+    <ellipse cx="118" cy="110" rx="2.4" ry="1.8" fill="#5a2a10" stroke="none"/>
+    <ellipse cx="134" cy="110" rx="2.4" ry="1.8" fill="#5a2a10" stroke="none"/>
+    <path d="M108 119 C116 127 136 127 144 119" fill="none" stroke-width="3.2"/>
+    <path d="M113 122 l2 5.5 l3 -4.5 Z M135 123.5 l3 4.5 l2 -5.5 Z" fill="#ffffff" stroke-width="1.6"/>
+    <ellipse cx="86" cy="116" rx="8" ry="4.5" fill="#ff7a8a" stroke="none" opacity="0.45"/>
+    <ellipse cx="166" cy="116" rx="8" ry="4.5" fill="#ff7a8a" stroke="none" opacity="0.45"/>
+    </g>
+  </g>
+</svg>
