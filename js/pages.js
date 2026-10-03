@@ -28,13 +28,13 @@ function renderClassBattle() {
   const cb = lbData.classBattle || { week: [] };
   const rows = cb.week || [];
   const max = Math.max(1, ...rows.map(r => r.kills));
-  $("#lb-note").textContent = "Class Battle: every enemy destroyed this week (solo and multiplayer) counts for your class. The week starts on Monday.";
+  $("#lb-note").textContent = "Class Battle: every virus beaten this week (solo and multiplayer) counts for your class. The week starts on Monday.";
   $("#lb-body").innerHTML = `<div class="card" style="grid-column:1/-1"><h3>⚔️ CLASS BATTLE — THIS WEEK</h3>
-    ${cb.lastChampion ? `<p class="small">👑 Last week's champion: <b class="lv">${esc(cb.lastChampion.cls)}</b> with ${cb.lastChampion.kills} enemies destroyed</p>` : ""}
-    ${rows.length ? rows.map((r, i) => `<div class="cb-row" title="${esc(r.cls)}: ${r.kills} enemies destroyed by ${r.pilots} pilots in ${r.games} games">
+    ${cb.lastChampion ? `<p class="small">👑 Last week's champion: <b class="lv">${esc(cb.lastChampion.cls)}</b> with ${cb.lastChampion.kills} viruses beaten</p>` : ""}
+    ${rows.length ? rows.map((r, i) => `<div class="cb-row" title="${esc(r.cls)}: ${r.kills} viruses beaten by ${r.pilots} tamers in ${r.games} games">
       <span class="rank ${r.kills > 0 ? "r" + (i + 1) : ""}">${r.kills > 0 && i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span><span class="cls">${esc(r.cls)}</span>
       <div class="track"><div class="fill" style="width:${(100 * r.kills / max).toFixed(1)}%"></div></div>
-      <span class="num small"><b>${r.kills}</b> kills · ${r.pilots} 👤</span></div>`).join("") : '<p class="muted">No battles yet this week — be the first!</p>'}
+      <span class="num small"><b>${r.kills}</b> viruses · ${r.pilots} 👤</span></div>`).join("") : '<p class="muted">No battles yet this week — be the first!</p>'}
   </div>`;
 }
 $$("#lb-seg button").forEach(b => b.onclick = () => { lbDiff = b.dataset.d; if (lbData) renderLeaderboard(); });
@@ -45,7 +45,7 @@ $("#btn-lb-refresh").onclick = () => loadLeaderboard(true);
  * ===================================================================== */
 let tData = null, tSort = { key: "cls", dir: 1 };
 function teacherInit() {
-  const pw = store.sget("mst_tpw", null);
+  const pw = store.sget("dmt_tpw", null);
   if (tData) return renderTeacher();
   $("#t-login").style.display = ""; $("#t-dash").style.display = "none";
   if (pw) teacherLoad(pw);
@@ -57,13 +57,13 @@ async function teacherLoad(pw) {
   msg.className = "muted"; msg.textContent = "Checking…";
   try {
     const r = await api({ action: "teacher", password: pw }, "POST", 30000);
-    if (!r.ok) { msg.className = "err"; msg.textContent = r.error === "wrong_password" ? "Wrong password." : "Error: " + r.error; store.sset("mst_tpw", null); return; }
-    store.sset("mst_tpw", pw); msg.textContent = ""; $("#t-pass").value = "";
+    if (!r.ok) { msg.className = "err"; msg.textContent = r.error === "wrong_password" ? "Wrong password." : "Error: " + r.error; store.sset("dmt_tpw", null); return; }
+    store.sset("dmt_tpw", pw); msg.textContent = ""; $("#t-pass").value = "";
     tData = r; renderTeacher();
   } catch (e) { msg.className = "err"; msg.textContent = "Can't reach the server. Please try again."; }
 }
-$("#btn-t-refresh").onclick = () => { const pw = store.sget("mst_tpw", null); if (pw) { $("#btn-t-refresh").textContent = "LOADING…"; teacherLoad(pw).finally(() => $("#btn-t-refresh").textContent = "REFRESH"); } };
-$("#btn-t-logout").onclick = () => { store.sset("mst_tpw", null); tData = null; teacherInit(); };
+$("#btn-t-refresh").onclick = () => { const pw = store.sget("dmt_tpw", null); if (pw) { $("#btn-t-refresh").textContent = "LOADING…"; teacherLoad(pw).finally(() => $("#btn-t-refresh").textContent = "REFRESH"); } };
+$("#btn-t-logout").onclick = () => { store.sset("dmt_tpw", null); tData = null; teacherInit(); };
 $("#t-class").onchange = () => renderTeacher();
 
 function renderTeacher() {
@@ -157,17 +157,19 @@ function frame(now) {
   } else {
     updateEffects(dt);
     const narrow = window.innerWidth <= 900;
-    camera.position.set(0, 2.3, narrow ? 13 : 8.6);
-    camTarget.set(0, narrow ? -1.6 : 1.9, 0);
+    camera.position.set(0, narrow ? 3.2 : 2.3, narrow ? 13 : 8.6);
+    camTarget.set(0, narrow ? -0.6 : 1.9, 0);
     camera.lookAt(camTarget);
     if (previewMech) {
-      previewMech.rotation.y = Math.sin(t * 0.4) * 0.9 + 0.35;
-      previewMech.position.y = narrow ? 0.9 : 0;
-      // show off: aim and fire now and then
-      const cyc = t % 6;
+      previewMech.rotation.y = 0;
+      previewMech.scale.setScalar(narrow ? 0.8 : 0.66);
+      previewMech.position.y = narrow ? 0.3 : 0;
+      // show off: attack now and then, and evolve for a few seconds every cycle
+      const cyc = t % 12;
       if (cyc > 3 && cyc < 5) MODELS.aimMech(previewMech, previewAnim, new V3(Math.sin(t) * 3, 3, 12).applyMatrix4(previewMech.matrixWorld));
       else MODELS.aimMech(previewMech, previewAnim, null);
-      if (cyc > 3.4 && cyc < 5 && Math.random() < 0.08) MODELS.fireMech(previewAnim, Math.random() < 0.3);
+      if (((cyc > 3.4 && cyc < 5) || (cyc > 8 && cyc < 10)) && Math.random() < 0.06) MODELS.fireMech(previewAnim, Math.random() < 0.4);
+      previewAnim.evo = cyc > 7 && cyc < 11;
       MODELS.animateMech(previewMech, previewAnim, dt);
     }
   }
@@ -179,7 +181,7 @@ function frame(now) {
  * ===================================================================== */
 applyQuality();
 addEventBank();
-setEnvironment("deep", activeEvent() ? activeEvent().id : null);
+setEnvironment("plains", activeEvent() ? activeEvent().id : null);
 setPreviewMech((wallet() && wallet().selected) || "starter", profile().skin);
 goPlayHome();
 requestAnimationFrame(frame);
@@ -187,4 +189,4 @@ loadRemoteConfig().then(() => { if (S.currentScreen === "scr-login") showLogin()
 if (isSchool()) flushPending();
 window.addEventListener("online", flushPending);
 // test hook (used by automated tests only)
-window.__MST = { G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };
+window.__DMT = { G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };

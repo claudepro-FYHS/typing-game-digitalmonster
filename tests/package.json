@@ -1,7 +1,7 @@
 {
-  "name": "mecha-strike-typer-tests",
+  "name": "digi-monster-typer-tests",
   "private": true,
-  "description": "Tests for Mecha Strike Typer (see ../CLAUDE.md)",
+  "description": "Tests for Digi Monster Typer (see ../CLAUDE.md)",
   "scripts": {
     "unit": "node unit.js",
     "e2e": "node run.js",

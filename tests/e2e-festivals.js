@@ -7,7 +7,7 @@ const DATES = process.env.D ? JSON.parse(process.env.D) : [['2026-10-31', 'hallo
 async function autoType(page, seconds) {
   const end = Date.now() + seconds * 1000;
   while (Date.now() < end) {
-    const info = await page.evaluate(() => { const G = __MST.G; if (!G.running || G.over) return { over: true }; if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
+    const info = await page.evaluate(() => { const G = __DMT.G; if (!G.running || G.over) return { over: true }; if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
       let t = G.lock; if (!t) { const c = G.targets.filter(x => x.alive && !(x.kind === 'boss' && G.boss && G.boss.enter < 1)); if (!c.length) return { wait: true }; t = c[0]; } return { rest: t.word.slice(t.typed) }; });
     if (info.over) return; if (info.wait) { await sleep(120); continue; }
     await page.keyboard.type(info.rest[0]); await sleep(55);
@@ -31,16 +31,16 @@ async function autoType(page, seconds) {
     await p.screenshot({ path: OUT + `f-${want}-hangar.png` });
     await p.selectOption('#bank-select', evBank);
     await p.click('#btn-launch'); await sleep(2500);
-    const words = await p.evaluate(() => __MST.G.targets.map(t => t.word));
+    const words = await p.evaluate(() => __DMT.G.targets.map(t => t.word));
     if (want === 'aprilfools') {
       await p.evaluate(() => { window.__fools = 0; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if ((n.textContent || '').includes('APRIL FOOL')) window.__fools++; }))).observe(document.body, { childList: true, subtree: true }); });
       await autoType(p, 40);
-      console.log('   april fools pranks seen:', await p.evaluate(() => window.__fools), 'kills', await p.evaluate(() => __MST.G.me.kills));
+      console.log('   april fools pranks seen:', await p.evaluate(() => window.__fools), 'kills', await p.evaluate(() => __DMT.G.me.kills));
     }
     // skip to the boss
-    await p.evaluate(() => { const G = __MST.G; G.stageKills = 999; G.targets.forEach(t => { t.alive = false; if (t.mesh) t.mesh.visible = false; }); G.targets = G.targets.filter(t => t.kind === 'boss'); });
+    await p.evaluate(() => { const G = __DMT.G; G.stageKills = 999; G.targets.forEach(t => { t.alive = false; if (t.mesh) t.mesh.visible = false; }); G.targets = G.targets.filter(t => t.kind === 'boss'); });
     await sleep(9000);
-    const boss = await p.evaluate(() => __MST.G.boss ? __MST.G.boss.name : null);
+    const boss = await p.evaluate(() => __DMT.G.boss ? __DMT.G.boss.name : null);
     const bossName = await p.evaluate(() => { const el = document.querySelector('#boss-name'); return el ? el.textContent : ''; });
     console.log('   words', words.join(','), '| boss', boss, bossName);
     await p.screenshot({ path: OUT + `f-${want}-boss.png` });

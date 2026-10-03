@@ -6,7 +6,7 @@ const errors = [];
 async function autoType(page, seconds) {
   const end = Date.now() + seconds * 1000;
   while (Date.now() < end) {
-    const info = await page.evaluate(() => { const G = __MST.G; if (!G.running || G.over) return { over: true }; if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
+    const info = await page.evaluate(() => { const G = __DMT.G; if (!G.running || G.over) return { over: true }; if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
       let t = G.lock; if (!t) { const c = G.targets.filter(x => x.alive && !(x.kind === 'boss' && G.boss && G.boss.enter < 1)); if (!c.length) return { wait: true }; t = c[0]; } return { rest: t.word.slice(t.typed) }; });
     if (info.over) return; if (info.wait) { await sleep(120); continue; }
     await page.keyboard.type(info.rest[0]); await sleep(55);
@@ -23,7 +23,7 @@ async function autoType(page, seconds) {
   const sp = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
   sp.on('pageerror', e => errors.push('S ' + e.message));
   await sp.goto('http://localhost:8123/'); await sleep(1200);
-  await sp.evaluate(() => __MST.onGoogleCredential({ credential: 'fake:lee@foonyew.edu.my' })); await sleep(900);
+  await sp.evaluate(() => __DMT.onGoogleCredential({ credential: 'fake:lee@foonyew.edu.my' })); await sleep(900);
   await sp.selectOption('#pf-class', '1B'); await sp.fill('#pf-seat', '8'); await sp.fill('#pf-name', 'Lee'); await sp.fill('#pf-nick', 'LeeLaser');
   await sp.click('#btn-profile-save'); await sleep(1200);
   await sp.click('#shop-seg [data-tab="paint"]'); await sleep(200);

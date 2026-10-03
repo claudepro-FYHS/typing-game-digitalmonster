@@ -1,5 +1,5 @@
 /* =====================================================================
- *  钢弹击字 Mecha Strike Typer — 设定文件 (Settings)
+ *  数码怪兽击字 Digi Monster Typer — 设定文件 (Settings)
  *
  *  老师只需要改这里的 APPS_SCRIPT_URL（第一次设置时贴一次就好）。
  *  班级列表、老师密码、Google Client ID 都在 Google Sheet 的

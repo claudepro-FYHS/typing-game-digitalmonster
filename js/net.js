@@ -3,7 +3,7 @@
  *  MULTIPLAYER NETWORKING (PeerJS / WebRTC, peer-to-peer)
  *  The host's browser runs the match; up to 3 guests connect with a room code.
  * ===================================================================== */
-const PEER_PREFIX = "mstyper-fy-";
+const PEER_PREFIX = "dmtyper-fy-";
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 let NET = { role: null };
 
@@ -52,7 +52,7 @@ function renderLobby() {
   $("#mp-room").style.display = "";
   $("#mp-room-code").textContent = NET.code || "-----";
   const st = NET.settings || {};
-  $("#mp-room-settings").textContent = st.diff ? `${st.diff} · ${(WORD_BANKS[st.bank] || {}).name || ""} · ${st.stages ? st.stages + " stages" : "Endless"} · ${(NET.lobby || []).length}/4 pilots` : "Connecting…";
+  $("#mp-room-settings").textContent = st.diff ? `${st.diff} · ${(WORD_BANKS[st.bank] || {}).name || ""} · ${st.stages ? st.stages + " stages" : "Endless"} · ${(NET.lobby || []).length}/4 tamers` : "Connecting…";
   $("#mp-players").innerHTML = (NET.lobby || []).map((p, i) => `<div class="prow"><span class="dot" style="background:${PCOLORS[i % 4]}"></span>
     <span class="who"><b>${esc(p.nick)}</b> <span class="lv small">LV${p.level || 1}</span> <span class="muted small">${esc(p.cls || "")}</span>${p.pid === "p0" ? ' <span class="small" style="color:var(--gold)">HOST</span>' : ""}${p.pid === NET.myPid ? ' <span class="small">(you)</span>' : ""}</span>
     <span class="small muted">${esc((MECH_BY_ID[p.mech] || MECHS[0]).name)}</span></div>`).join("") || '<p class="muted">Waiting…</p>';
@@ -94,10 +94,10 @@ function hostOnData(conn, d) {
   if (NET.role !== "host" || !d) return;
   if (d.r === "hello") {
     if (NET.started) { conn.send({ e: "reject", reason: "The match has already started." }); setTimeout(() => conn.close(), 500); return; }
-    if (NET.lobby.length >= 4) { conn.send({ e: "reject", reason: "This room is full (4 pilots)." }); setTimeout(() => conn.close(), 500); return; }
+    if (NET.lobby.length >= 4) { conn.send({ e: "reject", reason: "This room is full (4 tamers)." }); setTimeout(() => conn.close(), 500); return; }
     const pid = "p" + (NET.nextPid++);
     conn.pid = pid; NET.conns[pid] = conn;
-    NET.lobby.push({ pid, nick: String(d.nick || "Pilot").slice(0, 12), cls: String(d.cls || "").slice(0, 8), mech: MECH_BY_ID[d.mech] ? d.mech : "starter",
+    NET.lobby.push({ pid, nick: String(d.nick || "Tamer").slice(0, 12), cls: String(d.cls || "").slice(0, 8), mech: MECH_BY_ID[d.mech] ? d.mech : "starter",
       skin: SKIN_BY_ID[d.skin] ? d.skin : "default", level: Math.max(1, Math.min(50, Number(d.level) || 1)) });
     conn.send({ e: "welcome", pid });
     lobbyBroadcast();

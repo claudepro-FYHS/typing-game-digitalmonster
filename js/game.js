@@ -47,16 +47,16 @@ function speedFactor(t) { const v = player(t.victim); if (!v) return 1; return v
 /* ---------- setup ---------- */
 function makePlayer(info, idx, n) {
   const mech = MECH_BY_ID[info.mech] || MECHS[0];
-  const mesh = MODELS.buildMech(mech, SKIN_BY_ID[info.skin]);
-  mesh.rotation.y = Math.PI; mesh.scale.setScalar(0.85);
+  const mesh = MODELS.buildMech(mech, SKIN_BY_ID[info.skin], { back: true }); // we see our partner from behind
+  mesh.rotation.y = Math.PI; mesh.scale.setScalar(0.62);
   const x = n > 1 ? (idx - (n - 1) / 2) * 7 : 0;
   mesh.position.set(x, 0, 0);
   scene.add(mesh);
-  const shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 14), MODELS.GLOW(0x8fe3ff, 0.1));
-  shieldMesh.position.set(x, 2, 0); shieldMesh.visible = false; scene.add(shieldMesh);
-  const aura = new THREE.Mesh(new THREE.SphereGeometry(2.9, 20, 14), new THREE.MeshBasicMaterial({ color: 0x3ad0ff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false }));
-  aura.position.set(x, 2, 0); aura.visible = false; scene.add(aura);
-  const p = { pid: info.pid, nick: info.nick || "Pilot", cls: info.cls || "", mech, mesh, shieldMesh, aura, anim: MODELS.newAnim(), x, color: PCOLORS[idx % 4],
+  const shieldMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1, 1), new THREE.MeshBasicMaterial({ color: 0x8fe3ff, transparent: true, opacity: 0.16, wireframe: true, depthWrite: false }));
+  shieldMesh.position.set(x, 1.5, 0); shieldMesh.visible = false; scene.add(shieldMesh);
+  const aura = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.3, 0.15, 6, 1, true), new THREE.MeshBasicMaterial({ color: 0x3ad0ff, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  aura.position.set(x, 0.1, 0); aura.visible = false; scene.add(aura);
+  const p = { pid: info.pid, nick: info.nick || "Tamer", cls: info.cls || "", mech, mesh, shieldMesh, aura, anim: MODELS.newAnim(), x, color: PCOLORS[idx % 4],
     hp: mech.hp, maxHp: mech.hp, shield: false, freezeT: 0, slowT: 0, items: { bomb: 0, freeze: 0, shield: 0 },
     score: 0, kills: 0, alive: true, left: false, wpm: 0, acc: 100, assigned: 0, aimAt: null, aimT: 0 };
   if (n > 1) {
@@ -96,7 +96,7 @@ function startGame(opts) {
   S.currentScreen = "game";
   const sp = G.me.mech.special;
   $("#special-btn").style.display = sp ? "" : "none";
-  setEnvironment(S.prefs.bg && BACKGROUNDS.some(b => b.id === S.prefs.bg && b.level <= myLevel()) ? S.prefs.bg : "deep", G.event);
+  setEnvironment(S.prefs.bg && BACKGROUNDS.some(b => b.id === S.prefs.bg && b.level <= myLevel()) ? S.prefs.bg : "plains", G.event);
   render3DMode(); resize(); focusTyper();
   updateHud(); setComboTier(0);
   Music.start();
@@ -150,7 +150,8 @@ function createTarget(ev) {
     t.mesh = ev.kind === "missile" ? buildMissile() : MODELS.buildEnemy(ev.type);
     if (ev.elite) {
       t.elite = true;
-      const glow = new THREE.Mesh(new THREE.SphereGeometry(2.2, 14, 10), MODELS.GLOW(0xffd54a, 0.22)); glow.position.y = 2.2; t.mesh.add(glow);
+      const h = t.mesh.userData.top || 4;
+      const glow = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), MODELS.GLOW(0xffd54a, 0.2)); glow.scale.setScalar(h * 0.85); glow.position.y = h * 0.42; t.mesh.add(glow);
     }
     t.start = new V3().fromArray(ev.s); t.end = new V3().fromArray(ev.en);
     t.mesh.position.copy(t.start);
@@ -174,7 +175,7 @@ function removeTarget(t) {
 
 function targetPoint(t) {
   if (t.kind === "boss") return t.mesh.position.clone().add(new V3(0, 0, (t.mesh.userData.front || 4) * 0.6));
-  return t.mesh.position.clone().add(new V3(0, t.kind === "missile" ? 0 : 2.6, 0));
+  return t.mesh.position.clone().add(new V3(0, t.kind === "missile" ? 0 : (t.mesh.userData.top || 5) * 0.45, 0));
 }
 function muzzlePos(p) { const v = new V3(); if (p && p.mesh) p.mesh.userData.rig.muzzle.getWorldPosition(v); return v; }
 function shootFx(p, t, big) {
@@ -222,6 +223,7 @@ function onBossHit(ev) {
   b.hp = ev.hp;
   { const sc = project(t.pos); if (sc) showMeaning(t.word, sc.x, sc.y + 30); }
   explode(targetPoint(t).add(new V3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 2, 0)), 0xff8844, 50, 0.45, 10);
+  MODELS.hitFlash(t.mesh, 0.3);
   sfx("kill");
   t.word = ev.word; t.typed = 0; t.myShot = false; t.pending = false; t.others = {};
   if (G.lock === t) G.lock = null;
@@ -252,7 +254,7 @@ function onBossDown(ev) {
 
 function onHit(ev) {
   const t = G.byId[ev.id], v = player(ev.victim);
-  if (t) { explode(t.mesh.position.clone().add(new V3(0, t.kind === "missile" ? 0 : 2, 0)), t.kind === "missile" ? 0xff7744 : 0xff5555, 40, 0.35, 8); removeTarget(t); }
+  if (t) { explode(targetPoint(t), t.kind === "missile" ? 0xff7744 : 0xff5555, 40, 0.35, 8); removeTarget(t); }
   if (!v) return;
   v.hp = ev.hp; v.shield = ev.shield;
   if (ev.blocked || ev.dead) { if (v.pid === G.myPid && ev.blocked && !ev.dead) floater(window.innerWidth / 2, window.innerHeight * 0.6, "SHIELD BLOCKED!", "#8fe3ff"); return; }
@@ -272,7 +274,7 @@ function killPlayer(v) {
   if (v.left) { v.mesh.visible = false; v.shieldMesh.visible = false; return; }
   explode(v.mesh.position.clone().add(new V3(0, 2, 0)), 0xff6633, 120, 0.6, 12);
   setTimeout(() => { v.mesh.visible = false; v.shieldMesh.visible = false; }, 250);
-  if (v.pid === G.myPid) { releaseLock(); if (G.mode === "multi") showMsg("MECH DESTROYED", "Spectating — your teammates fight on!", true); }
+  if (v.pid === G.myPid) { releaseLock(); if (G.mode === "multi") showMsg("PARTNER DOWN", "Spectating — your teammates fight on!", true); }
 }
 
 function onPState(ev) {
@@ -291,7 +293,8 @@ function onFx(ev) {
     for (const id of ev.ids || []) { const t = G.byId[id]; if (t) beam(muzzlePos(p), targetPoint(t), 0xfff2a8, 0.5, 0.5); }
     if (ev.boss && G.boss) beam(muzzlePos(p), targetPoint(G.boss.target), 0xfff2a8, 0.9, 0.6);
     G.shake = Math.max(G.shake, 0.3); sfx("buster");
-    if (p.pid !== G.myPid && G.mode === "multi") floater(window.innerWidth / 2, 150, `${p.nick}: ${p.mech.name} SPECIAL!`, p.color);
+    if (p.pid !== G.myPid && G.mode === "multi") floater(window.innerWidth / 2, 150, `${p.nick}: ${p.mech.name} DIGIVOLVED!`, p.color);
+    else if (p.pid === G.myPid) floater(window.innerWidth / 2, 150, `${p.mech.name} EVOLVED INTO ${p.mech.evo}!`, "#ffe066");
   } else if (ev.kind === "bomb") {
     if (p.pid === G.myPid) { const f = $("#flash"); f.style.background = "rgba(255,255,255,.7)"; f.classList.add("on"); setTimeout(() => { f.classList.remove("on"); setTimeout(() => f.style.background = "", 400); }, 80); }
     sfx("buster");
@@ -324,7 +327,7 @@ function beginStage(n) {
   G.stage = n; G.stageKills = 0;
   for (const p of G.players) if (p.alive && p.mech.startShield && !p.shield) { p.shield = true; emitPState(p); }
   const rv = Object.keys(G.revenge || {}).length;
-  setPhase("intro", 2.2, `Destroy ${killsGoal()} enemies` + (nPlayers() === 1 && rv ? ` · ⭐ ${rv} revenge words are waiting!` : ""));
+  setPhase("intro", 2.2, `Beat ${killsGoal()} viruses` + (nPlayers() === 1 && rv ? ` · ⭐ ${rv} revenge words are waiting!` : ""));
 }
 
 function emitPState(p) {
@@ -367,7 +370,7 @@ function spawnBoss() {
   const n = nPlayers();
   const hp = Math.round((G.diff.bossHp + 2 * (G.stage - 1)) * (1 + 0.5 * (n - 1)));
   if (!G.bossOrder) {
-    // bosses unlocked by pilot level (host's level in multiplayer), shuffled
+    // bosses unlocked by tamer level (host's level in multiplayer), shuffled
     const normal = MODELS.BOSSES.map((b, i) => b.event ? -1 : i).filter(i => i >= 0).slice(0, bossPoolSize(G.level));
     G.bossOrder = normal; for (let i = normal.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [normal[i], normal[j]] = [normal[j], normal[i]]; }
   }
@@ -422,7 +425,7 @@ function resolveBossHit(pid, combo, word, dmg) {
   emit({ e: "bossDown", id: b.id, by: pid, pts: pts + 500 * G.stage, bonus: Math.round((20 + 10 * G.stage) * G.diff.mult) });
   for (const q of G.players) if (q.alive) { q.hp = Math.min(q.maxHp, q.hp + 1); emitPState(q); }
   const last = G.stagesLimit && G.stage >= G.stagesLimit;
-  setPhase("clear", 3.2, last ? "MISSION COMPLETE!" : "+1 ♥ for every pilot");
+  setPhase("clear", 3.2, last ? "BATTLE COMPLETE!" : "+1 ♥ for every tamer");
 }
 
 function hitPlayer(t) {
@@ -554,24 +557,25 @@ function update(dt) {
       MODELS.animateEnemy(t.mesh, { progress: k, wob: t.wob, vx }, dt, G.time);
     } else {
       t.mesh.position.x += Math.sin(G.time * 3 + t.wob) * 0.6 * (1 - k);
-      t.mesh.lookAt(t.end);
+      MODELS.animateShot(t.mesh, G.time);
     }
     t.pos.copy(t.mesh.position).add(new V3(0, t.mesh.userData.top || 3, 0));
     t.el.classList.toggle("iced", f < 1);
     if (auth && t.progress >= 1) hitPlayer(t);
   }
 
-  // pilots: aim, fire, breathe
+  // partners: aim, attack, breathe, evolve
   for (const p of G.players) {
     if (!p.mesh.visible) continue;
     let aim = null;
     if (p.pid === G.myPid && G.lock && G.lock.alive) aim = targetPoint(G.lock);
     else if (p.aimAt && p.aimAt.alive && p.aimT > 0) aim = targetPoint(p.aimAt);
     p.aimT = Math.max(0, p.aimT - dt);
+    p.anim.evo = p.pid === G.myPid && G.comboTier >= 2; // a 25+ combo makes your partner evolve (looks only)
     MODELS.aimMech(p.mesh, p.anim, aim);
     MODELS.animateMech(p.mesh, p.anim, dt);
     p.shieldMesh.visible = p.shield && p.alive;
-    if (p.aura.visible) { const k = 0.5 + 0.5 * Math.sin(G.time * 6); p.aura.material.opacity = 0.08 + 0.1 * k + G.comboTier * 0.02; p.aura.scale.setScalar(1 + 0.08 * k); p.aura.position.y = 2 + p.mesh.position.y; if (!p.alive) p.aura.visible = false; }
+    if (p.aura.visible) { const k = 0.5 + 0.5 * Math.sin(G.time * 6); p.aura.material.opacity = 0.3 + 0.25 * k + G.comboTier * 0.05; p.aura.scale.set(1 + 0.15 * k, 1 + 8 * k, 1 + 0.15 * k); p.aura.position.y = 0.1 + 0.6 * k; p.aura.rotation.y += dt * 2; if (!p.alive) p.aura.visible = false; }
     if (p.shield) p.shieldMesh.rotation.y += dt;
   }
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt);
@@ -616,6 +620,7 @@ function handleChar(ch) {
   }
   if (t.word[t.typed] === ch) {
     t.typed++; G.correct++; renderTag(t); sfx("key");
+    MODELS.hitFlash(t.mesh, 0.06);
     shootFx(G.me, t, false);
     sendProg(t);
     if (t.typed >= t.word.length) completeWord(t);
@@ -751,7 +756,7 @@ function positionTags() {
   }
   for (const p of G.players) {
     if (!p.tagEl) continue;
-    const sc = p.mesh.visible ? project(p.mesh.position.clone().add(new V3(0, 4.6, 0))) : null;
+    const sc = p.mesh.visible ? project(p.mesh.position.clone().add(new V3(0, 4.0, 0))) : null;
     if (!sc) { p.tagEl.style.display = "none"; continue; }
     p.tagEl.style.display = "";
     p.tagEl.textContent = `${p.pid === G.myPid ? "YOU · " : ""}${p.nick} ${"♥".repeat(Math.max(0, p.hp))}${p.shield ? " 🛡️" : ""}`;
@@ -843,7 +848,7 @@ function pause() {
   G.paused = !multi;
   $("#pause-title").textContent = multi ? "MENU" : "PAUSED";
   $("#pause-note").style.display = multi ? "" : "none";
-  $("#btn-end").textContent = multi ? (G.role === "host" ? "END MATCH FOR EVERYONE" : "LEAVE MATCH") : "END MISSION";
+  $("#btn-end").textContent = multi ? (G.role === "host" ? "END MATCH FOR EVERYONE" : "LEAVE MATCH") : "END BATTLE";
   $("#btn-resume").textContent = multi ? "BACK TO BATTLE" : "RESUME";
   $("#scr-pause").classList.add("show");
   typer.blur();
@@ -889,19 +894,19 @@ function showResult(r, ranking, reason, keystrokes) {
   hideMsg();
   showScreen("scr-result");
   resize();
-  const titles = { destroyed: "MECH DESTROYED — MISSION REPORT", victory: "MISSION COMPLETE!", ended: "MISSION REPORT", left: "YOU LEFT THE MATCH", hostLeft: "HOST DISCONNECTED — MATCH ENDED" };
-  $("#res-title").textContent = r.mode === "Multi" && reason !== "left" && reason !== "hostLeft" ? `MATCH RESULT — ${ranking[0] ? ranking[0].nick + " WINS!" : ""}` : (titles[reason] || "MISSION REPORT");
+  const titles = { destroyed: "PARTNER DOWN — BATTLE REPORT", victory: "BATTLE COMPLETE!", ended: "BATTLE REPORT", left: "YOU LEFT THE MATCH", hostLeft: "HOST DISCONNECTED — MATCH ENDED" };
+  $("#res-title").textContent = r.mode === "Multi" && reason !== "left" && reason !== "hostLeft" ? `MATCH RESULT — ${ranking[0] ? ranking[0].nick + " WINS!" : ""}` : (titles[reason] || "BATTLE REPORT");
   if (r.mode === "Multi") {
-    $("#res-ranking").innerHTML = `<div class="table-wrap"><table class="rank-table"><thead><tr><th>#</th><th>Pilot</th><th class="num">Score</th><th class="num">Kills</th><th class="num">WPM</th><th class="num">Accuracy</th></tr></thead><tbody>` +
+    $("#res-ranking").innerHTML = `<div class="table-wrap"><table class="rank-table"><thead><tr><th>#</th><th>Tamer</th><th class="num">Score</th><th class="num">Kills</th><th class="num">WPM</th><th class="num">Accuracy</th></tr></thead><tbody>` +
       ranking.map((p, i) => `<tr style="${p.pid === G.myPid ? "background:rgba(255,204,51,.1)" : ""}"><td class="rank r${i + 1}">${i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</td><td><b style="color:${p.color}">${esc(p.nick)}</b>${p.left ? ' <span class="muted small">(left)</span>' : ""}</td><td class="num"><b>${p.score}</b></td><td class="num">${p.kills}</td><td class="num">${p.wpm}</td><td class="num">${p.acc}%</td></tr>`).join("") +
       `</tbody></table></div>`;
   } else $("#res-ranking").innerHTML = "";
   const tiles = [
     ["hero", r.wpm, "Typing speed (WPM)"], ["hero", r.accuracy + "%", "Accuracy"], ["", fmtTime(r.survival), "Time survived"],
-    ["", r.score, "Score"], ["", r.stage, "Stage reached"], ["", r.kills, "Enemies destroyed"], ["", "+" + r.coins + " 🪙", "Coins earned"],
+    ["", r.score, "Score"], ["", r.stage, "Stage reached"], ["", r.kills, "Viruses beaten"], ["", "+" + r.coins + " 🪙", "Coins earned"],
   ];
   $("#res-stats").innerHTML = tiles.map(([c, v, l]) => `<div class="stat ${c}"><div class="v">${esc(v)}</div><div class="l">${esc(l)}</div></div>`).join("");
-  $("#res-mistakes").innerHTML = r.mistyped.length ? r.mistyped.map(m => `<span class="chip">${esc(m.word)}${S.prefs.meanings && window.MEANINGS && MEANINGS[m.word] ? ` <i>${esc(MEANINGS[m.word])}</i>` : ""}${m.count > 1 ? `<i>×${m.count}</i>` : ""}</span>`).join("") + '<div class="small muted" style="width:100%;margin-top:4px">⭐ These words will come back as golden revenge enemies — destroy them for double coins!</div>' : '<span class="ok">None — perfect typing! 🎯</span>';
+  $("#res-mistakes").innerHTML = r.mistyped.length ? r.mistyped.map(m => `<span class="chip">${esc(m.word)}${S.prefs.meanings && window.MEANINGS && MEANINGS[m.word] ? ` <i>${esc(MEANINGS[m.word])}</i>` : ""}${m.count > 1 ? `<i>×${m.count}</i>` : ""}</span>`).join("") + '<div class="small muted" style="width:100%;margin-top:4px">⭐ These words will come back as golden revenge viruses — beat them for double coins!</div>' : '<span class="ok">None — perfect typing! 🎯</span>';
   $("#res-progress").innerHTML = "";
   $("#btn-again").textContent = r.mode === "Multi" ? "MULTIPLAYER ▶" : "PLAY AGAIN ▶";
   S.lastMode = r.mode;
@@ -914,7 +919,7 @@ function showResult(r, ranking, reason, keystrokes) {
     saveWallet();
     up.innerHTML = "Guest mode — results are not recorded. <b>Sign in with your school account</b> to save scores and join the leaderboard.";
   } else if (tooShort) {
-    up.innerHTML = "This mission was too short to record (play at least 20 seconds). No coins or XP were saved.";
+    up.innerHTML = "This battle was too short to record (play at least 20 seconds). No coins or XP were saved.";
   } else {
     up.innerHTML = "⏳ Saving your result to the class record…";
     if (!isAdmin()) { S.session.player.coins += r.coins; saveWallet(); }
@@ -938,7 +943,7 @@ async function submitResult(r) {
     if (res.error === "session_expired" || res.error === "no_profile") return { state: "expired" };
     throw new Error(res.error);
   } catch (e) {
-    const q = store.get("mst_pending", []); q.push(item); store.set("mst_pending", q.slice(-20));
+    const q = store.get("dmt_pending", []); q.push(item); store.set("dmt_pending", q.slice(-20));
     return { state: "queued" };
   }
 }
@@ -946,7 +951,7 @@ async function submitResult(r) {
 let flushing = false;
 async function flushPending() {
   if (flushing || !CFG.APPS_SCRIPT_URL) return;
-  const q = store.get("mst_pending", []);
+  const q = store.get("dmt_pending", []);
   if (!q.length) return;
   flushing = true;
   const keep = [];
@@ -958,7 +963,7 @@ async function flushPending() {
       else if (res.error !== "session_expired" && res.error !== "no_profile") keep.push(item);
     } catch (e) { keep.push(item); }
   }
-  store.set("mst_pending", keep);
+  store.set("dmt_pending", keep);
   flushing = false;
   renderUserChip();
 }
@@ -975,7 +980,7 @@ function showProgress(pg, predicted) {
   const lvUp = pg.level > pg.levelBefore;
   const unlockedBg = BACKGROUNDS.filter(b => b.level > pg.levelBefore && b.level <= pg.level);
   $("#res-progress").innerHTML = `<div class="upload" style="margin:0">
-    <b class="lv">+${pg.xpGain} XP</b> · Pilot <span class="lv">LV ${pg.level}</span>${predicted ? ' <span class="muted small">(saving…)</span>' : ""}
+    <b class="lv">+${pg.xpGain} XP</b> · Tamer <span class="lv">LV ${pg.level}</span>${predicted ? ' <span class="muted small">(saving…)</span>' : ""}
     ${lvUp ? `<div style="margin-top:6px;font-family:var(--head);color:var(--good)">🎉 LEVEL UP! LV ${pg.levelBefore} → LV ${pg.level}${pg.level <= 11 ? " · new boss unlocked" : ""}${unlockedBg.length ? " · new battlefield: " + unlockedBg.map(b => esc(b.name)).join(", ") : ""}</div>` : ""}
     ${pg.newBadges && pg.newBadges.length ? `<div style="margin-top:6px">${pg.newBadges.map(id => BADGE_BY_ID[id] ? `<span class="newbadge">${BADGE_BY_ID[id].icon} NEW BADGE: <b>${esc(BADGE_BY_ID[id].name)}</b></span>` : "").join("")}</div>` : ""}
   </div>`;
@@ -984,62 +989,54 @@ function showProgress(pg, predicted) {
 }
 
 /* ---------- share card ---------- */
-let cardRenderer = null;
-function mechSnapshot(mechId, skinId) {
-  try {
-    if (!cardRenderer) cardRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-    cardRenderer.setSize(600, 600, false);
-    const sc = new THREE.Scene();
-    sc.add(new THREE.HemisphereLight(0x9cc4ff, 0x20123a, 1.0)); const d = new THREE.DirectionalLight(0xffffff, 1.2); d.position.set(5, 10, 8); sc.add(d);
-    const m = MODELS.buildMech(MECH_BY_ID[mechId] || MECHS[0], SKIN_BY_ID[skinId]);
-    const an = MODELS.newAnim(); MODELS.aimMech(m, an, new V3(-3, 3, 14)); an.aiming = 1; an.wantAim = 1;
-    for (let i = 0; i < 30; i++) MODELS.animateMech(m, an, 0.05);
-    m.rotation.y = 0.5; sc.add(m);
-    const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 100); cam.position.set(2.2, 2.6, 8.5); cam.lookAt(0, 1.9, 0);
-    cardRenderer.render(sc, cam);
-    return cardRenderer.domElement.toDataURL("image/png");
-  } catch (e) { return null; }
+function drawPixel(x, cv, cx, bottom, scale) { // nearest-neighbour upscale of a pixel-art canvas
+  x.imageSmoothingEnabled = false;
+  x.drawImage(cv, Math.round(cx - cv.width * scale / 2), Math.round(bottom - cv.height * scale), cv.width * scale, cv.height * scale);
 }
 function buildShareCard(r) {
   return new Promise((resolve) => {
     const c = document.createElement("canvas"); c.width = 1080; c.height = 1350;
     const x = c.getContext("2d");
-    const g = x.createLinearGradient(0, 0, 0, 1350); g.addColorStop(0, "#050816"); g.addColorStop(0.6, "#121a44"); g.addColorStop(1, "#2a1046");
+    const g = x.createLinearGradient(0, 0, 0, 1350); g.addColorStop(0, "#0b1440"); g.addColorStop(0.6, "#1d2a6a"); g.addColorStop(1, "#3a1a5a");
     x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
-    for (let i = 0; i < 160; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.8})`; x.fillRect(Math.random() * 1080, Math.random() * 1350, 2, 2); }
-    x.strokeStyle = "#3ad0ff"; x.lineWidth = 6; x.strokeRect(24, 24, 1032, 1302);
-    x.textAlign = "center"; x.fillStyle = "#ffcc33"; x.font = "900 64px Orbitron, Arial, sans-serif"; x.fillText("MECHA STRIKE TYPER", 540, 120);
-    const pr = profile(), nick = isSchool() && S.session.player ? S.session.player.nickname : "Guest Pilot";
-    x.fillStyle = "#e8f1ff"; x.font = "700 54px 'Exo 2', Arial, sans-serif"; x.fillText(nick, 540, 200);
-    x.fillStyle = "#93a4c8"; x.font = "600 34px 'Exo 2', Arial, sans-serif";
-    x.fillText(`Pilot LV ${myLevel()}${pr.title && BADGE_BY_ID[pr.title] ? "  ·  " + BADGE_BY_ID[pr.title].icon + " " + BADGE_BY_ID[pr.title].name : ""}`, 540, 250);
-    const finish = () => {
-      x.fillStyle = "#ffcc33"; x.font = "900 150px Orbitron, Arial, sans-serif"; x.fillText(String(r.wpm), 540, 1010);
-      x.fillStyle = "#93a4c8"; x.font = "700 36px Orbitron, Arial, sans-serif"; x.fillText("WPM", 540, 1060);
-      const stats = [[r.accuracy + "%", "ACCURACY"], [String(r.kills), "KILLS"], [String(r.maxCombo || 0), "MAX COMBO"], [String(r.stage), "STAGE"]];
-      stats.forEach(([v, l], i) => { const cx = 175 + i * 243; x.fillStyle = "#e8f1ff"; x.font = "800 52px Orbitron, Arial, sans-serif"; x.fillText(v, cx, 1170); x.fillStyle = "#93a4c8"; x.font = "600 24px Orbitron, Arial, sans-serif"; x.fillText(l, cx, 1208); });
-      x.fillStyle = "#93a4c8"; x.font = "500 26px 'Exo 2', Arial, sans-serif";
-      x.fillText(`${(MECH_BY_ID[r.mech] || MECHS[0]).name} · ${r.difficulty} · ${r.mode === "Multi" ? "Multiplayer" : "Solo"} · ${new Date().toLocaleDateString("en-GB")}`, 540, 1270);
-      x.fillText(location.host + location.pathname, 540, 1305);
-      resolve(c.toDataURL("image/png"));
-    };
-    const shot = mechSnapshot(r.mech, profile().skin);
-    if (!shot) return finish();
-    const img = new Image(); img.onload = () => { x.drawImage(img, 190, 270, 700, 700); finish(); }; img.onerror = finish; img.src = shot;
+    for (let gx = 0; gx < 1080; gx += 54) { x.fillStyle = "rgba(90,255,210,.07)"; x.fillRect(gx, 0, 2, 1350); }
+    for (let gy = 0; gy < 1350; gy += 54) { x.fillStyle = "rgba(90,255,210,.07)"; x.fillRect(0, gy, 1080, 2); }
+    for (let i = 0; i < 120; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.8})`; const s = Math.random() < 0.2 ? 6 : 3; x.fillRect(Math.random() * 1080 | 0, Math.random() * 1350 | 0, s, s); }
+    x.fillStyle = "#5affd0"; for (const [a, b, w, h] of [[24, 24, 1032, 8], [24, 1318, 1032, 8], [24, 24, 8, 1302], [1048, 24, 8, 1302]]) x.fillRect(a, b, w, h);
+    x.textAlign = "center"; x.fillStyle = "#ffcc33"; x.font = "700 70px 'Pixelify Sans', Arial, sans-serif"; x.fillText("DIGI MONSTER TYPER", 540, 120);
+    const pr = profile(), nick = isSchool() && S.session.player ? S.session.player.nickname : "Guest Tamer";
+    x.fillStyle = "#e8f1ff"; x.font = "700 54px 'Pixelify Sans', Arial, sans-serif"; x.fillText(nick, 540, 200);
+    x.fillStyle = "#a8b8e0"; x.font = "600 34px 'Exo 2', Arial, sans-serif";
+    x.fillText(`Tamer LV ${myLevel()}${pr.title && BADGE_BY_ID[pr.title] ? "  ·  " + BADGE_BY_ID[pr.title].icon + " " + BADGE_BY_ID[pr.title].name : ""}`, 540, 250);
+    const m = MECH_BY_ID[r.mech] || MECHS[0], skin = SKIN_BY_ID[profile().skin];
+    try {
+      const rookie = MODELS.portrait(m, skin), evo = MODELS.portrait(m, skin, { evo: true });
+      x.fillStyle = "rgba(10,6,30,.35)"; x.fillRect(110, 905, 860, 22);
+      drawPixel(x, rookie, 240, 920, 7); drawPixel(x, evo, 700, 920, 11);
+      x.fillStyle = "#ffe066"; x.font = "700 64px 'Pixelify Sans', Arial, sans-serif"; x.fillText("➜", 405, 800);
+    } catch (e) {}
+    x.fillStyle = "#ffcc33"; x.font = "700 150px 'Pixelify Sans', Arial, sans-serif"; x.fillText(String(r.wpm), 540, 1060);
+    x.fillStyle = "#a8b8e0"; x.font = "700 36px 'Pixelify Sans', Arial, sans-serif"; x.fillText("WPM", 540, 1100);
+    const stats = [[r.accuracy + "%", "ACCURACY"], [String(r.kills), "VIRUSES"], [String(r.maxCombo || 0), "MAX COMBO"], [String(r.stage), "STAGE"]];
+    stats.forEach(([v, l], i) => { const cx = 175 + i * 243; x.fillStyle = "#e8f1ff"; x.font = "700 52px 'Pixelify Sans', Arial, sans-serif"; x.fillText(v, cx, 1190); x.fillStyle = "#a8b8e0"; x.font = "600 24px 'Pixelify Sans', Arial, sans-serif"; x.fillText(l, cx, 1226); });
+    x.fillStyle = "#a8b8e0"; x.font = "500 26px 'Exo 2', Arial, sans-serif";
+    x.fillText(`${m.name} → ${m.evo} · ${r.difficulty} · ${r.mode === "Multi" ? "Multiplayer" : "Solo"} · ${new Date().toLocaleDateString("en-GB")}`, 540, 1272);
+    x.fillText(location.host + location.pathname, 540, 1306);
+    resolve(c.toDataURL("image/png"));
   });
 }
 $("#btn-share").onclick = async () => {
   if (!S.lastResult) return;
   openModal('<h2>SHARE CARD</h2><p class="muted">Making your card…</p>');
   const url = await buildShareCard(S.lastResult);
-  openModal(`<h2>SHARE CARD</h2><img class="share-img" src="${url}" alt="Your mission card"><p class="small muted" style="text-align:center">Save the picture and share it with your class!</p>`,
-    `<a class="btn gold extra" style="flex:0 0 auto" download="mecha-strike-typer.png" href="${url}">⬇ SAVE IMAGE</a>` + (navigator.canShare ? `<button class="btn primary extra" id="btn-native-share" style="flex:0 0 auto">SHARE…</button>` : ""));
+  openModal(`<h2>SHARE CARD</h2><img class="share-img" src="${url}" alt="Your battle card"><p class="small muted" style="text-align:center">Save the picture and share it with your class!</p>`,
+    `<a class="btn gold extra" style="flex:0 0 auto" download="digi-monster-typer.png" href="${url}">⬇ SAVE IMAGE</a>` + (navigator.canShare ? `<button class="btn primary extra" id="btn-native-share" style="flex:0 0 auto">SHARE…</button>` : ""));
   const ns = $("#btn-native-share");
   if (ns) ns.onclick = async () => {
     try {
       const blob = await (await fetch(url)).blob();
-      const file = new File([blob], "mecha-strike-typer.png", { type: "image/png" });
-      if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: "Mecha Strike Typer", text: `I typed ${S.lastResult.wpm} WPM in Mecha Strike Typer!` });
+      const file = new File([blob], "digi-monster-typer.png", { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: "Digi Monster Typer", text: `I typed ${S.lastResult.wpm} WPM in Digi Monster Typer!` });
     } catch (e) {}
   };
 };
