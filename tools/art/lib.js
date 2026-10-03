@@ -43,7 +43,8 @@ function make() {
     scale(s, x, y, k, body) { return `<g transform="translate(${x} ${y}) scale(${k}) translate(${-x} ${-y})">${body}</g>`; },
     star(cx, cy, r1, r2, pts, fill, x = '') { let d = ''; for (let i = 0; i < pts * 2; i++) { const a = -Math.PI / 2 + i * Math.PI / pts, r = i % 2 ? r2 : r1; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1); } return `<path d="${d}Z" fill="${fill}" ${x}/>`; },
     svg(vb, body) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">\n<defs>${[...defs.values()].join('')}</defs>\n<g stroke="${H.OUT}" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">\n${body}\n</g>\n</svg>\n`;
+      const [, , vw, vh] = vb.split(/[\s,]+/).map(Number);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${vw}" height="${vh}">\n<defs>${[...defs.values()].join('')}</defs>\n<g stroke="${H.OUT}" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round">\n${body}\n</g>\n</svg>\n`;
     },
   };
   return H;

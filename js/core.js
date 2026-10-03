@@ -165,7 +165,7 @@ async function showLogin() {
   showScreen("scr-login");
   const art = $("#login-art");
   if (art && !art.children.length) {
-    art.innerHTML = [["frostpup", 0], ["starter", 0], ["starter", 1], ["drakeling", 0]]
+    art.innerHTML = [["frostpup", 0], ["starter", 0], ["starter", 1], ["omnimon", 0], ["shadowkit", 0]]
       .map(([id, evo]) => `<img src="${portraitImg(MECH_BY_ID[id], "default", evo)}" class="${evo ? "big" : ""}" alt="">`).join("");
   }
   renderUserChip();
@@ -451,15 +451,16 @@ async function buySkin(id, btn) {
   renderSkinList(); renderMechList();
 }
 function specialText(m) { return m.special ? `⚡ needs ${m.special.charge} in a row` : ""; }
-const portraitCache = {};
-function portraitImg(m, skinId, evo) { // pixel portrait as a data URL (shown with image-rendering: pixelated)
-  const k = m.id + "|" + skinId + "|" + (evo ? 1 : 0);
-  if (!portraitCache[k]) { try { portraitCache[k] = MODELS.portrait(m, SKIN_BY_ID[skinId], { evo }).toDataURL(); } catch (e) { portraitCache[k] = ""; } }
-  return portraitCache[k];
+function portraitImg(m, skinId, evo) { // the partner's picture (art/<id>.svg, or a recoloured copy for a skin)
+  try { return MODELS.portraitURL(m, SKIN_BY_ID[skinId], evo); } catch (e) { return ""; }
+}
+function evoLine(m) {
+  return m.knight ? `Royal Knight · combo 25/50/100 gives ${({ bomb: "💣", freeze: "❄️", shield: "🛡️" })[m.comboItem] || ""} ${m.comboItem}`
+    : `evolves into <b>${esc(m.evo)}</b>`;
 }
 function renderMechList() {
   const w = wallet();
-  $("#mech-list").innerHTML = MECHS.map(m => {
+  $("#mech-list").innerHTML = MECHS.map((m, i) => {
     const owned = w.owned.includes(m.id);
     const selected = w.selected === m.id;
     let action;
@@ -467,9 +468,10 @@ function renderMechList() {
     else if (owned) action = `<button class="btn" data-use="${m.id}" style="padding:5px 10px">USE</button>`;
     else action = `<button class="btn gold" data-buy="${m.id}" style="padding:5px 10px" ${w.coins < m.price ? "disabled" : ""}>BUY 🪙${m.price}</button>`;
     const skinId = owned ? profile().skin : "default";
-    return `<div class="mech-card ${previewId === m.id ? "sel" : ""}" data-id="${m.id}">
+    const head = m.knight && !MECHS[i - 1].knight ? '<div class="mech-group">👑 ROYAL KNIGHTS <span class="muted small">already Mega · no evolution</span></div>' : "";
+    return `${head}<div class="mech-card ${previewId === m.id ? "sel" : ""}${m.knight ? " knight" : ""}" data-id="${m.id}">
       <div class="top"><span class="name"><img class="pix" src="${portraitImg(m, skinId)}" alt="">${m.name}</span>${action}</div>
-      <div class="from">${esc(m.from)} · evolves into <b>${esc(m.evo)}</b></div>
+      <div class="from">${esc(m.from)} · ${evoLine(m)}</div>
       <div class="hp">${"♥".repeat(m.hp)} <span class="muted small">${owned ? "" : "🪙 " + m.price}</span></div>
       <div class="desc">${esc(m.plus)} ${m.minus ? `<span class="minus">(${esc(m.minus)})</span>` : ""}</div></div>`;
   }).join("");
@@ -479,7 +481,9 @@ function renderMechList() {
   }));
   $$("#mech-list [data-use]").forEach(b => b.onclick = () => selectMech(b.dataset.use));
   $$("#mech-list [data-buy]").forEach(b => b.onclick = () => buyMech(b.dataset.buy, b));
-  $("#mech-title").innerHTML = `${esc(MECH_BY_ID[previewId].name)} <span class="evo-arrow">➜</span> <span class="evo-name">${esc(MECH_BY_ID[previewId].evo)}</span>`;
+  const pm = MECH_BY_ID[previewId];
+  $("#mech-title").innerHTML = pm.knight ? `${esc(pm.name)} <span class="evo-name">👑 ROYAL KNIGHT</span>`
+    : `${esc(pm.name)} <span class="evo-arrow">➜</span> <span class="evo-name">${esc(pm.evo)}</span>`;
   setPreviewMech(previewId, profile().skin);
   renderUserChip();
 }

@@ -25,7 +25,7 @@ http.createServer((req, res) => {
   if (!fs.existsSync(p)) { res.writeHead(404); return res.end(); }
   let data = fs.readFileSync(p);
   if (p.endsWith('config.js')) data = data.toString().replace(/APPS_SCRIPT_URL: "[^"]*"/, 'APPS_SCRIPT_URL: "http://localhost:8123/api"').replace('PEER_SERVER: null', 'PEER_SERVER: { host: "127.0.0.1", port: 9000, path: "/peer", secure: false }');
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
   res.writeHead(200, { 'Content-Type': types[path.extname(p)] || 'application/octet-stream' });
   res.end(data);
 }).listen(8123, () => console.log('mock on 8123'));

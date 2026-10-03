@@ -106,6 +106,7 @@ function hostOnData(conn, d) {
   if (!conn.pid || !G.running || G.role !== "host") return;
   const pid = conn.pid;
   switch (d.r) {
+    case "combo": grantComboItem(pid, d.n); break;
     case "claim": { const t = G.byId[d.id]; if (t && t.kind === "boss") resolveBossHit(pid, d.combo, d.word, 1); else resolveKill(d.id, pid, d.combo, "type"); break; }
     case "prog": emit({ e: "prog", pid, id: d.id, n: Math.max(0, Number(d.n) || 0) }); break;
     case "item": doItem(pid, d.k); break;

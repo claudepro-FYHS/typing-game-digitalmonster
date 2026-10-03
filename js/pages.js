@@ -132,6 +132,8 @@ function renderTeacher() {
  * ===================================================================== */
 let last = performance.now();
 const camTarget = new V3();
+const CAM = { x: 13, y: 13, z: 13, tx: -6, ty: 2, tz: -30, // battle camera (landscape) ...
+  phone: { x: 4, y: 14, z: 22, tx: -1, ty: 5, tz: -34 } };   // ... and on a phone held upright
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -150,14 +152,15 @@ function frame(now) {
     if (G.slowmo > 0) G.slowmo = Math.max(0, G.slowmo - dt);
     if (!G.paused && !G.over) update(dt * slow);
     updateEffects(G.paused ? 0 : dt * slow);
-    // camera sits high behind the mechs so enemies stay visible above their heads
+    // diagonal side view: the partners stand lower-left facing right, enemies come from the upper-right
     const portrait = camera.aspect < 0.8, n = G.players.length;
-    camera.position.set(0, (portrait ? 7.6 : 6.3) + (n - 1) * 1.0, (portrait ? 17 : 12.5) + (n - 1) * (portrait ? 6 : 3.5));
+    const C = portrait ? CAM.phone : CAM;
+    camera.position.set(C.x + (n - 1) * (portrait ? 3 : 4), C.y + (n - 1) * 1.0, C.z + (n - 1) * (portrait ? 5 : 3));
     if (G.shake > 0) camera.position.add(new V3((Math.random() - 0.5) * G.shake, (Math.random() - 0.5) * G.shake, 0));
-    camTarget.set(0, portrait ? 5.2 : 4.4, -40);
+    camTarget.set(C.tx, C.ty, C.tz);
     if (G.slowmo > 0 && G.slowFocus) {
       const k = Math.sin(Math.min(1, (1.5 - G.slowmo) / 1.5) * Math.PI) * 0.55; // rush in and back out
-      camera.position.lerp(G.slowFocus.clone().add(new V3(0, 3, 32)), k);
+      camera.position.lerp(G.slowFocus.clone().add(new V3(18, 3, 26)), k);
       camTarget.lerp(G.slowFocus, k);
     }
     camera.lookAt(camTarget);
@@ -197,4 +200,4 @@ loadRemoteConfig().then(() => { if (S.currentScreen === "scr-login") showLogin()
 if (isSchool()) flushPending();
 window.addEventListener("online", flushPending);
 // test hook (used by automated tests only)
-window.__DMT = { G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };
+window.__DMT = { CAM, G, S, get NET() { return NET; }, startGame, handleChar, onGoogleCredential, requestItem, requestSpecial, MODELS };
