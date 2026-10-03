@@ -1,5 +1,5 @@
 /* =====================================================================
- *  钢弹击字 Mecha Strike Typer — 词库 (Word banks)
+ *  数码怪兽击字 Digi Monster Typer — 词库 (Word banks)
  *
  *  想加单字：在对应词库的引号里加上英文单字，用空格隔开即可。
  *  只能用英文字母（a–z），重复的字会自动去掉。
@@ -86,7 +86,32 @@ watt wave weather weight wifi wire wireless
 xray
 zinc zoology` },
 
-  space: { name: "Space & Mecha", words: `
+  digital: { name: "Digital World & Monsters", words: `
+ability adventure android antivirus armor attack
+backup badge battery battle beam beast beetle bite blast brave browser bug byte
+cable camera castle cave champion charge chase chip circuit claw climb code coin combo compass computer courage crest crystal cyber
+dark dash data defend delete desert device devil digital dinosaur download dragon
+earth egg email emblem energy error escape evolution evolve explore
+fang file fire firewall flame flash fly folder forest friend friendship
+gate ghost giant glacier glitch golem grow guard
+hacker hatch holy hope horn hunt
+ice insect internet island
+journey jump jungle
+keyboard kick kindness knight
+laser leaf level light lightning login loyalty
+map mega memory message metal microphone mission monster mountain
+network
+ocean offline online
+partner password pixel poison portal power program protect punch
+quest
+reboot rescue restore reward roar robot rookie
+scan score screen server shadow shield shock signal skill slime spark speaker stone storm swim
+tail tamer team thunder tower train treasure trust
+ultimate unicorn update upload
+vaccine video virus volcano
+water wave website wind wing wire wireless wisdom wolf world` },
+
+  space: { name: "Space & Adventure", words: `
 ace admiral alert alien alliance ammo antenna armor arsenal asteroid astronaut attack
 barrel base battle beacon beam blade blaster blast boost booster bridge bunker burst
 cadet cannon capsule captain cargo carrier charge cockpit colony combat comet command commander comrade console core corridor cosmos crater cruiser crew

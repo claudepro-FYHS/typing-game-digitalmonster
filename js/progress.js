@@ -1,30 +1,30 @@
 "use strict";
 /* =====================================================================
- *  PILOT PROGRESSION: level / XP, badges & titles, paint jobs,
+ *  TAMER PROGRESSION: level / XP, badges & titles, partner colors,
  *  battlefields (backgrounds), festival events.
  *  Rules must match apps-script/Code.gs (school accounts are scored there;
  *  guests use the same rules locally).
  * ===================================================================== */
 const BADGES = [
-  { id: "rookie", icon: "🎖️", name: "Rookie Pilot", desc: "Finish your first mission", test: (s) => s.games >= 1 },
-  { id: "ace", icon: "✈️", name: "Ace Pilot", desc: "Destroy 100 enemies", test: (s) => s.kills >= 100 },
-  { id: "veteran", icon: "🛡️", name: "Veteran", desc: "Destroy 1,000 enemies", test: (s) => s.kills >= 1000 },
-  { id: "legend", icon: "👑", name: "Legend", desc: "Destroy 5,000 enemies", test: (s) => s.kills >= 5000 },
+  { id: "rookie", icon: "🥚", name: "Rookie Tamer", desc: "Finish your first battle", test: (s) => s.games >= 1 },
+  { id: "ace", icon: "🦖", name: "Virus Buster", desc: "Beat 100 viruses", test: (s) => s.kills >= 100 },
+  { id: "veteran", icon: "🛡️", name: "Veteran Tamer", desc: "Beat 1,000 viruses", test: (s) => s.kills >= 1000 },
+  { id: "legend", icon: "👑", name: "Legendary Tamer", desc: "Beat 5,000 viruses", test: (s) => s.kills >= 5000 },
   { id: "boss10", icon: "🐉", name: "Boss Hunter", desc: "Defeat 10 bosses", test: (s) => s.bosses >= 10 },
-  { id: "boss50", icon: "⚔️", name: "Giant Slayer", desc: "Defeat 50 bosses", test: (s) => s.bosses >= 50 },
+  { id: "boss50", icon: "⚔️", name: "Mega Slayer", desc: "Defeat 50 bosses", test: (s) => s.bosses >= 50 },
   { id: "combo50", icon: "🔥", name: "Combo Master", desc: "50 words in a row without a mistake", test: (s) => s.bestCombo >= 50 },
   { id: "combo100", icon: "💥", name: "Unstoppable", desc: "100 words in a row without a mistake", test: (s) => s.bestCombo >= 100 },
-  { id: "perfect", icon: "🎯", name: "Perfectionist", desc: "Finish a mission with 100% accuracy (30+ keys)", test: (s) => s.perfect >= 1 },
+  { id: "perfect", icon: "🎯", name: "Perfectionist", desc: "Finish a battle with 100% accuracy (30+ keys)", test: (s) => s.perfect >= 1 },
   { id: "speed40", icon: "💨", name: "Speedster", desc: "Reach 40 WPM (80%+ accuracy)", test: (s) => s.bestWpm >= 40 },
   { id: "speed60", icon: "⚡", name: "Lightning Fingers", desc: "Reach 60 WPM (80%+ accuracy)", test: (s) => s.bestWpm >= 60 },
-  { id: "speed80", icon: "🌠", name: "Newtype", desc: "Reach 80 WPM (80%+ accuracy)", test: (s) => s.bestWpm >= 80 },
+  { id: "speed80", icon: "🌠", name: "Mega Evolution", desc: "Reach 80 WPM (80%+ accuracy)", test: (s) => s.bestWpm >= 80 },
   { id: "week5", icon: "📅", name: "Dedicated", desc: "Play on 5 different days in one week", test: (s) => s.weekDays >= 5 },
   { id: "streak7", icon: "🗓️", name: "Iron Will", desc: "Play 7 days in a row", test: (s) => s.bestStreak >= 7 },
-  { id: "avenger", icon: "⭐", name: "Avenger", desc: "Destroy 20 revenge enemies (words you once mistyped)", test: (s) => s.revenge >= 20 },
+  { id: "avenger", icon: "⭐", name: "Avenger", desc: "Beat 20 revenge viruses (words you once mistyped)", test: (s) => s.revenge >= 20 },
   { id: "festival", icon: "🏮", name: "Festival Hero", desc: "Play during a festival event", test: (s) => s.eventGames >= 1 },
   { id: "squad", icon: "🤝", name: "Squad Leader", desc: "Win a multiplayer match", test: (s) => s.mpWins >= 1 },
-  { id: "level10", icon: "🥈", name: "Elite Pilot", desc: "Reach pilot level 10", test: (s, lv) => lv >= 10 },
-  { id: "level20", icon: "🥇", name: "Ace of Aces", desc: "Reach pilot level 20", test: (s, lv) => lv >= 20 },
+  { id: "level10", icon: "🥈", name: "Elite Tamer", desc: "Reach tamer level 10", test: (s, lv) => lv >= 10 },
+  { id: "level20", icon: "🥇", name: "Champion Tamer", desc: "Reach tamer level 20", test: (s, lv) => lv >= 20 },
 ];
 const BADGE_BY_ID = Object.fromEntries(BADGES.map(b => [b.id, b]));
 
@@ -67,27 +67,27 @@ function applyProgress(p, r, nowMs) {
   return { xpGain: gain, levelBefore: before, level, newBadges: fresh };
 }
 
-/* ---------------- paint jobs (prices must match SKIN_PRICES in Code.gs) ---------------- */
+/* ---------------- partner colors (palette swaps; prices must match SKIN_PRICES in Code.gs) ---------------- */
 const SKINS = [
-  { id: "default", name: "Factory Colors", price: 0, swatch: ["#eef1f6", "#1f4fbf", "#d62a2a"] },
-  { id: "desert", name: "Desert Camo", price: 300, colors: { main: 0xc8b38a, accent: 0x8a7350, trim: 0x5e4e33, dark: 0x3b3224 }, swatch: ["#c8b38a", "#8a7350", "#5e4e33"] },
-  { id: "arctic", name: "Arctic", price: 300, colors: { main: 0xf4f8fb, accent: 0x9fc4dd, trim: 0x5f8fb0, dark: 0x2f4a5c }, swatch: ["#f4f8fb", "#9fc4dd", "#5f8fb0"] },
-  { id: "sakura", name: "Sakura", price: 400, colors: { main: 0xffd1e3, accent: 0xff7aa8, trim: 0xc2185b, dark: 0x5a2a3d }, swatch: ["#ffd1e3", "#ff7aa8", "#c2185b"] },
-  { id: "blackops", name: "Black Ops", price: 400, colors: { main: 0x2b2e35, accent: 0x16181c, trim: 0xc62828, dark: 0x0c0d10 }, swatch: ["#2b2e35", "#16181c", "#c62828"] },
-  { id: "neon", name: "Neon Cyber", price: 600, colors: { main: 0x1a1a2a, accent: 0x00e5ff, trim: 0xff2bd6, dark: 0x0b0b14 }, accentGlow: true, swatch: ["#1a1a2a", "#00e5ff", "#ff2bd6"] },
-  { id: "gold", name: "Royal Gold", price: 800, colors: { main: 0xe0b94e, accent: 0xb8902c, trim: 0x8a6a1c, dark: 0x4a3a12 }, mat: { metalness: 0.45, roughness: 0.3, emissive: 0x3a2a00, emissiveIntensity: 0.6 }, swatch: ["#e0b94e", "#b8902c", "#8a6a1c"] },
-  { id: "optical", name: "Optical Camo", price: 1000, mat: { transparent: true, opacity: 0.3, depthWrite: false }, swatch: ["rgba(200,230,255,.35)", "rgba(120,180,255,.35)", "rgba(255,255,255,.2)"] },
+  { id: "default", name: "Original Colors", price: 0, swatch: ["#ff8a1e", "#ffe2a8", "#3a6ad8"] },
+  { id: "desert", name: "Sand Data", price: 300, colors: { main: 0xd8b47a, sub: 0xa8845a, acc: 0x7a5a3a, belly: 0xf4e4c4 }, swatch: ["#d8b47a", "#a8845a", "#7a5a3a"] },
+  { id: "arctic", name: "Ice Data", price: 300, colors: { main: 0xeaf6ff, sub: 0x9fd0f0, acc: 0x5a9ad8, belly: 0xffffff }, swatch: ["#eaf6ff", "#9fd0f0", "#5a9ad8"] },
+  { id: "sakura", name: "Sakura", price: 400, colors: { main: 0xffc8dc, sub: 0xff8ab0, acc: 0xd83a7a, belly: 0xfff0f6 }, swatch: ["#ffc8dc", "#ff8ab0", "#d83a7a"] },
+  { id: "blackops", name: "Virus Black", price: 400, colors: { main: 0x34303e, sub: 0x1e1a26, acc: 0xe03a4a, belly: 0x5a5068 }, swatch: ["#34303e", "#1e1a26", "#e03a4a"] },
+  { id: "neon", name: "Neon Cyber", price: 600, colors: { main: 0x2a2850, sub: 0x00e5ff, acc: 0xff2bd6, belly: 0x4a4a7a }, accentGlow: true, glow: 0x00e5ff, swatch: ["#2a2850", "#00e5ff", "#ff2bd6"] },
+  { id: "gold", name: "Golden Shine", price: 800, colors: { main: 0xf0c850, sub: 0xc89a2a, acc: 0xfff0a0, belly: 0xfff4c8 }, accentGlow: true, glow: 0xffd84a, swatch: ["#f0c850", "#c89a2a", "#fff0a0"] },
+  { id: "optical", name: "Ghost Data", price: 1000, mat: { opacity: 0.42 }, swatch: ["rgba(200,230,255,.35)", "rgba(120,180,255,.35)", "rgba(255,255,255,.2)"] },
 ];
 const SKIN_BY_ID = Object.fromEntries(SKINS.map(s => [s.id, s]));
 
 /* ---------------- battlefields unlocked by level ---------------- */
 const BACKGROUNDS = [
-  { id: "deep", name: "Deep Space", level: 1 },
-  { id: "earth", name: "Earth Orbit", level: 3 },
-  { id: "moon", name: "Lunar Surface", level: 6 },
-  { id: "asteroid", name: "Asteroid Belt", level: 10 },
-  { id: "colony", name: "Space Colony", level: 15 },
-  { id: "nebula", name: "Crimson Nebula", level: 20 },
+  { id: "plains", name: "Data Plains", level: 1 },
+  { id: "beach", name: "Pixel Beach", level: 3 },
+  { id: "forest", name: "Glitch Forest", level: 6 },
+  { id: "desert", name: "Byte Desert", level: 10 },
+  { id: "city", name: "Neon City", level: 15 },
+  { id: "dark", name: "Dark Network", level: 20 },
 ];
 // Bosses unlocked by level: 5 at Lv1, one more per level, all 15 at Lv11
 function bossPoolSize(level) { return Math.min(MODELS.BOSSES.filter(b => !b.event).length, 4 + (level || 1)); }
@@ -162,7 +162,7 @@ function myLevel() { return isAdmin() ? 50 : levelFromXp(profile().xp || 0); }
 function titleText(id) { const b = BADGE_BY_ID[id]; return b ? `${b.icon} ${b.name}` : ""; }
 
 /* ---------------- revenge words (mistyped last time) ---------------- */
-function revengeKey() { return "mst_revenge_" + (isSchool() ? S.session.email : "guest"); }
+function revengeKey() { return "dmt_revenge_" + (isSchool() ? S.session.email : "guest"); }
 function revengeList() { return store.get(revengeKey(), {}); }
 function saveRevenge(map) {
   const entries = Object.entries(map).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).slice(0, 40);

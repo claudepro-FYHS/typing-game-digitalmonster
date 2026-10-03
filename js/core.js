@@ -1,6 +1,6 @@
 "use strict";
 /* =====================================================================
- *  钢弹击字 Mecha Strike Typer — main program
+ *  数码怪兽击字 Digi Monster Typer — main program
  * ===================================================================== */
 const CFG = Object.assign({ APPS_SCRIPT_URL: "", FALLBACK_CLASSES: ["1A", "1B"], SCHOOL_DOMAIN: "foonyew.edu.my", PEER_SERVER: null }, window.GAME_CONFIG || {});
 
@@ -43,13 +43,13 @@ async function api(payload, method = "POST", timeoutMs = 15000) {
 }
 
 const S = {
-  remote: { classes: store.get("mst_classes", CFG.FALLBACK_CLASSES), clientId: "", minAccuracy: 80, loaded: false },
-  session: store.sget("mst_session", null), // {token, email, exp, player, admin}
-  guest: store.get("mst_guest", { coins: 0, owned: ["starter"], selected: "starter" }),
-  prefs: Object.assign({ diff: "Normal", bank: "everyday", quality: "high", sound: true, music: true, meanings: true, bg: "deep", shopTab: "mechs" }, store.get("mst_prefs", {})),
+  remote: { classes: store.get("dmt_classes", CFG.FALLBACK_CLASSES), clientId: "", minAccuracy: 80, loaded: false },
+  session: store.sget("dmt_session", null), // {token, email, exp, player, admin}
+  guest: store.get("dmt_guest", { coins: 0, owned: ["starter"], selected: "starter" }),
+  prefs: Object.assign({ diff: "Normal", bank: "everyday", quality: "high", sound: true, music: true, meanings: true, bg: "plains", shopTab: "mechs" }, store.get("dmt_prefs", {})),
   lastMe: 0,
 };
-if (S.session && Date.now() > S.session.exp) { S.session = null; store.sset("mst_session", null); }
+if (S.session && Date.now() > S.session.exp) { S.session = null; store.sset("dmt_session", null); }
 S.guest.owned = (S.guest.owned || []).filter(id => MECH_BY_ID[id]);
 if (!S.guest.owned.includes("starter")) S.guest.owned.unshift("starter");
 if (!MECH_BY_ID[S.guest.selected]) S.guest.selected = "starter";
@@ -58,8 +58,8 @@ if (!WORD_BANKS[S.prefs.bank]) S.prefs.bank = "everyday";
 function isSchool() { return !!(S.session && S.session.token); }
 function isAdmin() { return !!(isSchool() && S.session.player && S.session.player.admin); }
 function wallet() { return isSchool() && S.session.player ? S.session.player : S.guest; }
-function saveWallet() { if (isSchool()) store.sset("mst_session", S.session); else store.set("mst_guest", S.guest); }
-function savePrefs() { store.set("mst_prefs", S.prefs); }
+function saveWallet() { if (isSchool()) store.sset("dmt_session", S.session); else store.set("dmt_guest", S.guest); }
+function savePrefs() { store.set("dmt_prefs", S.prefs); }
 function setPlayer(p) {
   if (!isSchool() || !p) return;
   p.owned = (p.owned || []).filter(id => MECH_BY_ID[id]);
@@ -131,7 +131,7 @@ async function loadRemoteConfig() {
   try {
     const c = await api({ action: "config" }, "GET", 10000);
     if (c && c.ok) {
-      if (c.classes && c.classes.length) { S.remote.classes = c.classes; store.set("mst_classes", c.classes); }
+      if (c.classes && c.classes.length) { S.remote.classes = c.classes; store.set("dmt_classes", c.classes); }
       S.remote.clientId = c.clientId || "";
       S.remote.minAccuracy = c.minAccuracy;
       S.remote.loaded = true;
@@ -158,6 +158,11 @@ function loadGsi() {
 
 async function showLogin() {
   showScreen("scr-login");
+  const art = $("#login-art");
+  if (art && !art.children.length) {
+    art.innerHTML = [["frostpup", 0], ["starter", 0], ["starter", 1], ["drakeling", 0]]
+      .map(([id, evo]) => `<img src="${portraitImg(MECH_BY_ID[id], "default", evo)}" class="${evo ? "big" : ""}" alt="">`).join("");
+  }
   renderUserChip();
   const warn = $("#setup-warn"), msg = $("#login-msg");
   warn.style.display = "none";
@@ -189,7 +194,7 @@ async function onGoogleCredential(resp) {
     if (r.ok) {
       S.session = { token: r.token, email: r.email, exp: Date.now() + 11.5 * 3600 * 1000, player: null, admin: !!r.admin };
       setPlayer(r.player);
-      store.sset("mst_session", S.session);
+      store.sset("dmt_session", S.session);
       S.guestMode = false; S.lastMe = Date.now();
       msg.textContent = "";
       giftToast(r);
@@ -205,7 +210,7 @@ async function onGoogleCredential(resp) {
 function signOut() {
   try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect(); } catch (e) {}
   netLeave();
-  S.session = null; store.sset("mst_session", null);
+  S.session = null; store.sset("dmt_session", null);
   S.guestMode = false;
   showLogin();
 }
@@ -294,7 +299,7 @@ function renderBankSelect() {
 }
 function renderEventBanners() {
   const ev = activeEvent();
-  if (typeof setEnvironment === "function" && !G.running) setEnvironment(envId || "deep", ev && ev.id);
+  if (typeof setEnvironment === "function" && !G.running) setEnvironment(envId || "plains", ev && ev.id);
   for (const id of ["#login-event", "#hangar-event"]) {
     const el = $(id); if (!el) continue;
     el.classList.toggle("show", !!ev);
@@ -317,7 +322,7 @@ function renderPilot() {
     (lv < 11 ? ` · next boss at LV ${lv + 1}` : "") + (nextBg ? ` · ${esc(nextBg.name)} battlefield at LV ${nextBg.level}` : "");
   const bg = $("#bg-select");
   bg.innerHTML = BACKGROUNDS.map(b => `<option value="${b.id}" ${b.level > lv ? "disabled" : ""}>${b.level > lv ? "🔒 " : ""}${esc(b.name)}${b.level > lv ? ` (LV ${b.level})` : ""}</option>`).join("");
-  if (!BACKGROUNDS.some(b => b.id === S.prefs.bg && b.level <= lv)) S.prefs.bg = "deep";
+  if (!BACKGROUNDS.some(b => b.id === S.prefs.bg && b.level <= lv)) S.prefs.bg = "plains";
   bg.value = S.prefs.bg;
   setEnvironment(S.prefs.bg, activeEvent() && activeEvent().id);
 }
@@ -354,7 +359,7 @@ function setShopTab(tab) {
 }
 function renderSkinList() {
   const pr = profile(), w = wallet();
-  $("#skin-list").innerHTML = `<p class="small muted" style="margin:0 0 4px">Paint jobs work on every mech you own.</p>` + SKINS.map(k => {
+  $("#skin-list").innerHTML = `<p class="small muted" style="margin:0 0 4px">Colors work on every partner you own.</p>` + SKINS.map(k => {
     const owned = isAdmin() || pr.skins.includes(k.id), sel = pr.skin === k.id;
     const action = sel ? '<span class="ok small">✔ IN USE</span>' : owned ? `<button class="btn" data-skin-use="${k.id}" style="padding:5px 10px">USE</button>`
       : `<button class="btn gold" data-skin-buy="${k.id}" style="padding:5px 10px" ${w.coins < k.price ? "disabled" : ""}>BUY 🪙${k.price}</button>`;
@@ -385,6 +390,12 @@ async function buySkin(id, btn) {
   renderSkinList(); renderMechList();
 }
 function specialText(m) { return m.special ? `⚡ needs ${m.special.charge} in a row` : ""; }
+const portraitCache = {};
+function portraitImg(m, skinId, evo) { // pixel portrait as a data URL (shown with image-rendering: pixelated)
+  const k = m.id + "|" + skinId + "|" + (evo ? 1 : 0);
+  if (!portraitCache[k]) { try { portraitCache[k] = MODELS.portrait(m, SKIN_BY_ID[skinId], { evo }).toDataURL(); } catch (e) { portraitCache[k] = ""; } }
+  return portraitCache[k];
+}
 function renderMechList() {
   const w = wallet();
   $("#mech-list").innerHTML = MECHS.map(m => {
@@ -394,9 +405,10 @@ function renderMechList() {
     if (selected) action = '<span class="ok small">✔ IN USE</span>';
     else if (owned) action = `<button class="btn" data-use="${m.id}" style="padding:5px 10px">USE</button>`;
     else action = `<button class="btn gold" data-buy="${m.id}" style="padding:5px 10px" ${w.coins < m.price ? "disabled" : ""}>BUY 🪙${m.price}</button>`;
+    const skinId = owned ? profile().skin : "default";
     return `<div class="mech-card ${previewId === m.id ? "sel" : ""}" data-id="${m.id}">
-      <div class="top"><span class="name">${m.name}</span>${action}</div>
-      <div class="from">${esc(m.from)}</div>
+      <div class="top"><span class="name"><img class="pix" src="${portraitImg(m, skinId)}" alt="">${m.name}</span>${action}</div>
+      <div class="from">${esc(m.from)} · evolves into <b>${esc(m.evo)}</b></div>
       <div class="hp">${"♥".repeat(m.hp)} <span class="muted small">${owned ? "" : "🪙 " + m.price}</span></div>
       <div class="desc">${esc(m.plus)} ${m.minus ? `<span class="minus">(${esc(m.minus)})</span>` : ""}</div></div>`;
   }).join("");
@@ -406,7 +418,7 @@ function renderMechList() {
   }));
   $$("#mech-list [data-use]").forEach(b => b.onclick = () => selectMech(b.dataset.use));
   $$("#mech-list [data-buy]").forEach(b => b.onclick = () => buyMech(b.dataset.buy, b));
-  $("#mech-title").textContent = MECH_BY_ID[previewId].name;
+  $("#mech-title").innerHTML = `${esc(MECH_BY_ID[previewId].name)} <span class="evo-arrow">➜</span> <span class="evo-name">${esc(MECH_BY_ID[previewId].evo)}</span>`;
   setPreviewMech(previewId, profile().skin);
   renderUserChip();
 }
@@ -442,7 +454,7 @@ $("#btn-quality").onclick = () => {
 $("#btn-sound").onclick = () => { S.prefs.sound = !S.prefs.sound; savePrefs(); $("#btn-sound").textContent = "SOUND: " + (S.prefs.sound ? "ON" : "OFF"); };
 function ensureOwnedSelection() {
   const w = wallet();
-  if (!w.owned.includes(previewId)) { $("#shop-msg").textContent = "Buy this mech first, or pick one you own."; return false; }
+  if (!w.owned.includes(previewId)) { $("#shop-msg").textContent = "Get this partner first, or pick one you own."; return false; }
   if (w.selected !== previewId) selectMech(previewId);
   return true;
 }

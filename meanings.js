@@ -1,6 +1,6 @@
 /* =====================================================================
- *  Mecha Strike Typer — 中文释义 (Chinese meanings)
- *  击落敌机时会显示单字的中文意思。格式：每行「英文 中文」。
+ *  Digi Monster Typer — 中文释义 (Chinese meanings)
+ *  打倒病毒怪兽时会显示单字的中文意思。格式：每行「英文 中文」。
  *  在 words.js 加了新单字的话，也可以在这里加一行它的中文意思（没有也没关系）。
  * ===================================================================== */
 window.MEANINGS = (function () {
@@ -2948,6 +2948,47 @@ zone 区域
 zoo 动物园
 zoology 动物学
 zoom 缩放；快速移动
+ability 能力
+android 人形机器人；安卓
+antivirus 杀毒软件
+backup 备份
+beast 野兽
+bug 虫子；程序错误
+cable 电缆；线
+claw 爪子
+combo 连击；组合
+crest 徽章；冠毛
+devil 魔鬼
+error 错误
+evolution 进化
+fang 獠牙
+firewall 防火墙
+flame 火焰
+glitch 小故障
+golem 石巨人
+hacker 黑客
+holy 神圣的
+horn 角；喇叭
+level 等级；水平
+login 登录
+loyalty 忠诚
+mega 超级的；巨大的
+microphone 麦克风
+partner 伙伴
+poison 毒；毒药
+quest 探索；任务
+reboot 重新启动
+restore 恢复
+rookie 新手
+shock 震惊；电击
+slime 黏液；史莱姆
+speaker 扬声器；演讲者
+tamer 驯兽师
+ultimate 终极的
+unicorn 独角兽
+update 更新
+vaccine 疫苗
+website 网站
 `;
   const out = {};
   raw.split("\n").forEach(function (line) {

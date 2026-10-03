@@ -12,7 +12,7 @@ async function autoType(page, seconds, delay) {
   const end = Date.now() + seconds * 1000;
   while (Date.now() < end) {
     const info = await page.evaluate(() => {
-      const G = __MST.G; if (!G.running || G.over) return { over: true };
+      const G = __DMT.G; if (!G.running || G.over) return { over: true };
       if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
       let t = G.lock;
       if (!t) { const c = G.targets.filter(x => x.alive && !x.pending && !(x.kind === 'boss' && G.boss && G.boss.enter < 1)); if (!c.length) return { wait: true }; t = c[Math.floor(Math.random() * c.length)]; }
@@ -27,7 +27,7 @@ async function autoType(page, seconds, delay) {
 async function mk(email, cls, seat, name, nick, hash) {
   const page = await (await browser.newContext({ viewport: { width: 900, height: 640 } })).newPage(); watch(page, nick);
   await page.goto(BASE + (hash || '')); await sleep(1200);
-  await page.evaluate((e) => __MST.onGoogleCredential({ credential: 'fake:' + e }), email); await sleep(900);
+  await page.evaluate((e) => __DMT.onGoogleCredential({ credential: 'fake:' + e }), email); await sleep(900);
   await page.selectOption('#pf-class', cls); await page.fill('#pf-seat', seat); await page.fill('#pf-name', name); await page.fill('#pf-nick', nick);
   await page.click('#btn-profile-save'); await sleep(1500);
   return page;
@@ -41,7 +41,7 @@ let browser;
   // guest 1 joins with invite link before signing in -> should auto join after sign in
   const g1 = await mk('dan@foonyew.edu.my', '1A', '2', 'Dan', 'DanDash', '#join=' + code);
   await sleep(4000);
-  console.log('g1 screen after invite link:', await g1.evaluate(() => __MST.S.currentScreen), '| lobby:', (await g1.textContent('#mp-players')).replace(/\s+/g, ' '));
+  console.log('g1 screen after invite link:', await g1.evaluate(() => __DMT.S.currentScreen), '| lobby:', (await g1.textContent('#mp-players')).replace(/\s+/g, ' '));
   const g2 = await mk('eve@foonyew.edu.my', '1B', '3', 'Eve', 'EveStar');
   await g2.click('#btn-multi'); await sleep(300); await g2.fill('#mp-code', 'ZZZZZ'); await g2.click('#btn-mp-join'); await sleep(6000);
   console.log('bad code msg:', await g2.textContent('#mp-msg'));
@@ -56,9 +56,9 @@ let browser;
   await h.screenshot({ path: OUT + 'mp3-host.png' });
   await Promise.all([p1, p2]);
   await h.screenshot({ path: OUT + 'mp3-host-late.png' });
-  const st = await h.evaluate(() => ({ stage: __MST.G.stage, phase: __MST.G.phase, players: __MST.G.players.map(p => [p.nick, p.score, p.kills, p.alive, p.left, p.wpm]) }));
+  const st = await h.evaluate(() => ({ stage: __DMT.G.stage, phase: __DMT.G.phase, players: __DMT.G.players.map(p => [p.nick, p.score, p.kills, p.alive, p.left, p.wpm]) }));
   console.log('host state:', JSON.stringify(st));
-  const assigned = await h.evaluate(() => __MST.G.players.map(p => [p.nick, p.assigned]));
+  const assigned = await h.evaluate(() => __DMT.G.players.map(p => [p.nick, p.assigned]));
   console.log('targets assigned per player (balance):', JSON.stringify(assigned));
   await h.keyboard.press('Escape'); await sleep(200); await h.click('#btn-end'); await sleep(4000);
   console.log('host:', await h.textContent('#res-title'), '|', await h.textContent('#res-upload'));

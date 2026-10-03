@@ -12,7 +12,7 @@ async function autoType(page, seconds, opts = {}) {
   const end = Date.now() + seconds * 1000;
   while (Date.now() < end) {
     const info = await page.evaluate(() => {
-      const G = __MST.G; if (!G.running || G.over) return { over: true };
+      const G = __DMT.G; if (!G.running || G.over) return { over: true };
       if ((G.phase !== 'wave' && G.phase !== 'boss') || !G.me.alive) return { wait: true };
       let t = G.lock;
       if (!t) { const c = G.targets.filter(x => x.alive && !x.pending && !(x.kind === 'boss' && G.boss && G.boss.enter < 1)); if (!c.length) return { wait: true }; t = c.reduce((a, b) => ((b.kind === 'boss' ? .2 : b.progress) > (a.kind === 'boss' ? .2 : a.progress) ? b : a)); }
@@ -33,10 +33,10 @@ async function autoType(page, seconds, opts = {}) {
   await ctx.addInitScript(`{ const off = ${Date.parse('2026-09-25T02:00:00Z')} - Date.now(); const N = Date.now; Date.now = () => N() + off; }`);
   const page = await ctx.newPage(); watch(page, 'G');
   await page.addInitScript(() => {
-    if (!localStorage.getItem('mst_seeded')) {
-      localStorage.setItem('mst_seeded', '1');
-      localStorage.setItem('mst_guest', JSON.stringify({ coins: 5000, owned: ['starter', 'seraph'], selected: 'seraph', xp: 5600 }));
-      localStorage.setItem('mst_revenge_guest', JSON.stringify({ apple: 2, river: 1, because: 3, friend: 1, garden: 1, window: 2 }));
+    if (!localStorage.getItem('dmt_seeded')) {
+      localStorage.setItem('dmt_seeded', '1');
+      localStorage.setItem('dmt_guest', JSON.stringify({ coins: 5000, owned: ['starter', 'drakeling'], selected: 'drakeling', xp: 5600 }));
+      localStorage.setItem('dmt_revenge_guest', JSON.stringify({ apple: 2, river: 1, because: 3, friend: 1, garden: 1, window: 2 }));
     }
   });
   await page.goto(BASE); await sleep(1500);
@@ -49,8 +49,8 @@ async function autoType(page, seconds, opts = {}) {
   await page.click('#shop-seg [data-tab="paint"]'); await sleep(300);
   await page.click('[data-skin-buy="gold"]'); await sleep(1200);
   await page.screenshot({ path: OUT + 'v-paint-gold.png' });
-  await page.selectOption('#bg-select', 'asteroid'); await sleep(800);
-  await page.screenshot({ path: OUT + 'v-hangar-asteroid.png' });
+  await page.selectOption('#bg-select', 'desert'); await sleep(800);
+  await page.screenshot({ path: OUT + 'v-hangar-desert.png' });
   await page.click('#btn-badges'); await sleep(400);
   await page.screenshot({ path: OUT + 'v-badges.png' }); await page.click('#btn-modal-close');
   await page.selectOption('#bank-select', 'event_midautumn');
@@ -59,18 +59,18 @@ async function autoType(page, seconds, opts = {}) {
   const intro = await page.textContent('#hud-msg'); console.log('intro:', intro);
   await autoType(page, 14);
   await page.screenshot({ path: OUT + 'v-game-combo.png' });
-  const st1 = await page.evaluate(() => ({ combo: __MST.G.combo, tier: __MST.G.comboTier, elites: __MST.G.targets.filter(t => t.elite).map(t => t.word), revKills: __MST.G.revengeKills, env: envId }));
+  const st1 = await page.evaluate(() => ({ combo: __DMT.G.combo, tier: __DMT.G.comboTier, elites: __DMT.G.targets.filter(t => t.elite).map(t => t.word), revKills: __DMT.G.revengeKills, env: envId }));
   console.log('state:', JSON.stringify(st1));
   // jump to boss
-  await page.evaluate(() => { const G = __MST.G; G.stageKills = 99; for (const t of G.targets.slice()) if (t.kind === 'enemy') t.progress = 2; G.me.hp = 5; G.me.shield = true; });
+  await page.evaluate(() => { const G = __DMT.G; G.stageKills = 99; for (const t of G.targets.slice()) if (t.kind === 'enemy') t.progress = 2; G.me.hp = 5; G.me.shield = true; });
   await sleep(7000);
   await page.screenshot({ path: OUT + 'v-event-boss.png' });
-  console.log('boss:', await page.evaluate(() => __MST.G.boss && __MST.G.boss.name));
-  await page.evaluate(() => { __MST.G.boss.hp = 1; });
-  const r = await autoType(page, 20, { until: () => __MST.G.slowmo > 0 });
+  console.log('boss:', await page.evaluate(() => __DMT.G.boss && __DMT.G.boss.name));
+  await page.evaluate(() => { __DMT.G.boss.hp = 1; });
+  const r = await autoType(page, 20, { until: () => __DMT.G.slowmo > 0 });
   await sleep(400);
   await page.screenshot({ path: OUT + 'v-finalblow.png' });
-  console.log('slowmo hit:', r, await page.evaluate(() => __MST.G.slowmo));
+  console.log('slowmo hit:', r, await page.evaluate(() => __DMT.G.slowmo));
   await sleep(4000);
   await autoType(page, 15, { mistake: 0.08 });
   await page.keyboard.press('Escape'); await sleep(200); await page.click('#btn-end'); await sleep(1500);
@@ -83,7 +83,7 @@ async function autoType(page, seconds, opts = {}) {
   // ---- school + leaderboard class battle ----
   const sp = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage(); watch(sp, 'S');
   await sp.goto(BASE); await sleep(1200);
-  await sp.evaluate(() => __MST.onGoogleCredential({ credential: 'fake:kim@foonyew.edu.my' })); await sleep(900);
+  await sp.evaluate(() => __DMT.onGoogleCredential({ credential: 'fake:kim@foonyew.edu.my' })); await sleep(900);
   await sp.selectOption('#pf-class', '2C'); await sp.fill('#pf-seat', '5'); await sp.fill('#pf-name', 'Kim'); await sp.fill('#pf-nick', 'KimKong');
   await sp.click('#btn-profile-save'); await sleep(1200);
   await sp.click('#btn-launch'); await sleep(3000);

@@ -8,7 +8,7 @@ async function autoType(page, seconds, opts = {}) {
   const end = Date.now() + seconds * 1000;
   while (Date.now() < end) {
     const info = await page.evaluate((pref) => {
-      const G = window.__MST.G; if (!G.running || G.over) return { over: true };
+      const G = window.__DMT.G; if (!G.running || G.over) return { over: true };
       if (G.phase !== 'wave' && G.phase !== 'boss') return { wait: true };
       if (!G.me.alive) return { wait: true };
       let t = G.lock;
@@ -35,7 +35,7 @@ function watch(page, tag) {
 }
 async function login(page, email) {
   await page.goto(BASE); await sleep(1200);
-  await page.evaluate((e) => window.__MST.onGoogleCredential({ credential: 'fake:' + e }), email);
+  await page.evaluate((e) => window.__DMT.onGoogleCredential({ credential: 'fake:' + e }), email);
   await sleep(800);
 }
 async function register(page, cls, seat, name, nick) {
@@ -53,10 +53,10 @@ async function register(page, cls, seat, name, nick) {
   await pa.click('#btn-launch'); await sleep(4000);
   await autoType(pa, 8);
   await pa.screenshot({ path: OUT + 'n-a2-solo.png' });
-  const r1 = await autoType(pa, 80, { until: () => { const G = window.__MST.G; return G.phase === 'boss' && G.boss && G.boss.enter >= 1 && G.targets.some(t => t.kind === 'missile'); } });
+  const r1 = await autoType(pa, 80, { until: () => { const G = window.__DMT.G; return G.phase === 'boss' && G.boss && G.boss.enter >= 1 && G.targets.some(t => t.kind === 'missile'); } });
   await pa.screenshot({ path: OUT + 'n-a3-boss.png' });
-  console.log('A boss reached:', r1, await pa.evaluate(() => ({ stage: __MST.G.stage, boss: __MST.G.boss && __MST.G.boss.name, kills: __MST.G.myKills })));
-  await autoType(pa, 40, { until: () => __MST.G.phase === 'clear' });
+  console.log('A boss reached:', r1, await pa.evaluate(() => ({ stage: __DMT.G.stage, boss: __DMT.G.boss && __DMT.G.boss.name, kills: __DMT.G.myKills })));
+  await autoType(pa, 40, { until: () => __DMT.G.phase === 'clear' });
   await pa.keyboard.press('Escape'); await sleep(200); await pa.click('#btn-end'); await sleep(900);
   console.log('A result:', (await pa.textContent('#res-stats')).replace(/\s+/g, ' '));
   // ---------- B: admin ----------
@@ -67,8 +67,8 @@ async function register(page, cls, seat, name, nick) {
   console.log('B admin class options include STAFF:', opts.includes('STAFF'));
   await register(pb, 'STAFF', '1', 'Cikgu Lim', 'Sensei');
   console.log('B chip:', (await pb.textContent('#userchip')).replace(/\s+/g, ' '));
-  await pb.click('.mech-card[data-id="liberty"] [data-use], .mech-card[data-id="liberty"]'); await sleep(300);
-  console.log('B liberty owned/use button:', await pb.$('.mech-card[data-id="liberty"] [data-use]') !== null || (await pb.textContent('.mech-card[data-id="liberty"]')).includes('IN USE'));
+  await pb.click('.mech-card[data-id="flarefox"] [data-use], .mech-card[data-id="flarefox"]'); await sleep(300);
+  console.log('B flarefox owned/use button:', await pb.$('.mech-card[data-id="flarefox"] [data-use]') !== null || (await pb.textContent('.mech-card[data-id="flarefox"]')).includes('IN USE'));
   // ---------- C: multiplayer (2 students) ----------
   await fetch('http://localhost:8123/__gift?who=2B&n=400');
   const ph = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage(); watch(ph, 'HOST');
@@ -76,8 +76,8 @@ async function register(page, cls, seat, name, nick) {
   await login(ph, 'amy@foonyew.edu.my'); await register(ph, '2B', '3', 'Amy Tan', 'AmyAce');
   console.log('HOST chip after gift:', (await ph.textContent('#userchip')).replace(/\s+/g, ' '));
   await login(pg, 'ben@foonyew.edu.my'); await register(pg, '2A', '7', 'Ben Lee', 'BenBolt');
-  // ben buys + uses another mech? keep starter. Amy buys aile with gift coins
-  await ph.click('.mech-card[data-id="aile"] [data-buy]'); await sleep(900);
+  // ben buys + uses another partner? keep starter. Amy buys sprout with gift coins
+  await ph.click('.mech-card[data-id="sprout"] [data-buy]'); await sleep(900);
   await ph.click('#btn-multi'); await sleep(500);
   await ph.click('#btn-mp-create'); await sleep(2500);
   const code = (await ph.textContent('#mp-room-code')).trim();
@@ -90,7 +90,7 @@ async function register(page, cls, seat, name, nick) {
   await Promise.all([autoType(ph, 40, { pref: 'mine', delay: 90 }), autoType(pg, 40, { delay: 80 })]);
   await ph.screenshot({ path: OUT + 'n-c2-host-game.png' });
   await pg.screenshot({ path: OUT + 'n-c3-guest-game.png' });
-  const st = await Promise.all([ph, pg].map(p => p.evaluate(() => ({ role: __MST.G.role, players: __MST.G.players.map(x => [x.nick, x.score, x.hp, x.kills]), targets: __MST.G.targets.length, phase: __MST.G.phase, stage: __MST.G.stage }))));
+  const st = await Promise.all([ph, pg].map(p => p.evaluate(() => ({ role: __DMT.G.role, players: __DMT.G.players.map(x => [x.nick, x.score, x.hp, x.kills]), targets: __DMT.G.targets.length, phase: __DMT.G.phase, stage: __DMT.G.stage }))));
   console.log('state host:', JSON.stringify(st[0]), '\nstate guest:', JSON.stringify(st[1]));
   await ph.keyboard.press('Escape'); await sleep(200); await ph.click('#btn-end'); await sleep(3500);
   await ph.screenshot({ path: OUT + 'n-c4-host-result.png' }); await pg.screenshot({ path: OUT + 'n-c5-guest-result.png' });

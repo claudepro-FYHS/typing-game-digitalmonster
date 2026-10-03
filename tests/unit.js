@@ -32,9 +32,9 @@ r = post({ action: 'submitScore', token: tok, result: res(25, 95, 'Normal', [{ w
 r = post({ action: 'submitScore', token: tok, result: res(31, 70, 'Normal', [], 10) }); assert(r.ok);
 r = post({ action: 'submitScore', token: tok2, result: res(40, 97, 'Hard', [{ word: 'river', count: 3 }], 10) }); assert(r.ok);
 // buy
-r = post({ action: 'buyMech', token: tok, mech: 'seraph' }); assert.equal(r.error, 'not_enough_coins');
-r = post({ action: 'buyMech', token: tok, mech: 'aile' }); assert(r.ok && r.player.owned.includes('aile') && r.player.coins === 710, JSON.stringify(r));
-r = post({ action: 'selectMech', token: tok, mech: 'seraph' }); assert.equal(r.error, 'not_owned');
+r = post({ action: 'buyMech', token: tok, mech: 'drakeling' }); assert.equal(r.error, 'not_enough_coins');
+r = post({ action: 'buyMech', token: tok, mech: 'sprout' }); assert(r.ok && r.player.owned.includes('sprout') && r.player.coins === 710, JSON.stringify(r));
+r = post({ action: 'selectMech', token: tok, mech: 'drakeling' }); assert.equal(r.error, 'not_owned');
 r = post({ action: 'selectMech', token: tok, mech: 'starter' }); assert(r.ok && r.player.selected === 'starter');
 // re-login returns player
 r = post({ action: 'login', idToken: 'fake:stu1@foonyew.edu.my' }); assert(r.player && r.player.nickname === 'Hero' && r.player.coins === 710);
@@ -60,7 +60,7 @@ assert(ta.ok && ta.admin === true && ta.player === null, JSON.stringify(ta));
 r = post({ action: 'saveProfile', token: ta.token, cls: 'STAFF', seat: '1', name: 'Cikgu', nickname: 'Sensei' });
 assert(r.ok && r.player.admin && r.player.coins === 999999 && r.player.owned.length === 15, JSON.stringify(r));
 r = post({ action: 'saveProfile', token: tok, cls: 'STAFF', seat: '3', name: 'Tan Ah Kow', nickname: 'Hero' }); assert.equal(r.error, 'bad_class'); // students can't pick STAFF
-r = post({ action: 'buyMech', token: ta.token, mech: 'seraph' }); assert(r.ok && r.player.selected === 'seraph' && r.player.coins === 999999);
+r = post({ action: 'buyMech', token: ta.token, mech: 'drakeling' }); assert(r.ok && r.player.selected === 'drakeling' && r.player.coins === 999999);
 r = post({ action: 'submitScore', token: ta.token, result: res(99, 99, 'Normal', [], 50) }); assert(r.ok);
 let lb2 = JSON.parse(ctx.doGet({ parameter: { action: 'leaderboard' } }).content);
 assert(!JSON.stringify(lb2).includes('Sensei'), 'admin on leaderboard');

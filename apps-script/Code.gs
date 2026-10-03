@@ -1,5 +1,5 @@
 /**
- * 钢弹击字 Mecha Strike Typer — Google Apps Script 接收端
+ * 数码怪兽击字 Digi Monster Typer — Google Apps Script 接收端
  *
  * 把整个文件的内容贴进 Apps Script 编辑器的 Code.gs（取代原本的内容）。
  * 第一次使用：在上方函数选单选「setup」→ 按「Run / 运行」→ 授权。
@@ -7,7 +7,7 @@
  *
  * 老师平时只需要改 Google Sheet 里的分页：
  *   Settings   ：Classes 班级列表（用逗号分隔）、TeacherPassword 老师后台密码、GoogleClientId
- *   Admins     ：管理员 email（金币无限、全部机体可用，成绩不上排行榜）
+ *   Admins     ：管理员 email（金币无限、全部伙伴怪兽可用，成绩不上排行榜）
  *   CoinGifts  ：送金币（对象可以是 email、班级例如 2B，或 ALL 全部人）
  *   Events     ：节日活动的日期（中秋 midautumn、新年 cny、校庆 anniversary）
  */
@@ -21,9 +21,9 @@ var SHEET_GIFTS = 'CoinGifts';
 var SHEET_EVENTS = 'Events';
 
 var SCORE_HEADERS = ['Time', 'Class', 'Seat No', 'Name', 'Nickname', 'Email', 'Difficulty', 'Word Bank',
-  'WPM', 'Accuracy (%)', 'Survival (s)', 'Score', 'Stage', 'Mistyped Words', 'Mech', 'Mode', 'Kills', 'Max Combo'];
-var PLAYER_HEADERS = ['Email', 'Class', 'Seat No', 'Name', 'Nickname', 'Coins', 'Owned Mechs',
-  'Selected Mech', 'Last Updated', 'Gifts Received (auto)', 'Owned Skins', 'Selected Skin', 'XP', 'Badges', 'Title',
+  'WPM', 'Accuracy (%)', 'Survival (s)', 'Score', 'Stage', 'Mistyped Words', 'Partner', 'Mode', 'Kills', 'Max Combo'];
+var PLAYER_HEADERS = ['Email', 'Class', 'Seat No', 'Name', 'Nickname', 'Coins', 'Owned Partners',
+  'Selected Partner', 'Last Updated', 'Gifts Received (auto)', 'Owned Colors', 'Selected Color', 'XP', 'Badges', 'Title',
   'Stats (auto — do not edit)'];
 var ADMIN_HEADERS = ['Email', 'Unlimited coins (YES / NO)', 'Note'];
 var GIFT_HEADERS = ['Who: email / class (e.g. 2B) / ALL', 'Coins', 'Note', 'Gift ID (auto — do not edit)'];
@@ -45,12 +45,12 @@ var DEFAULT_SETTINGS = [
   ['DisabledEvents', '', '不想要的节日活动，用逗号分隔。例如：halloween, aprilfools（ID 见 README）'],
 ];
 
-// 机体价钱（要和网页 index.html 里的 MECHS 一致）
+// 伙伴怪兽价钱（要和网页 models.js 里的 MECHS 一致）
 var MECH_PRICES = {
-  starter: 0, redcomet: 300, aile: 300, aegis: 400, flag: 400, zenith: 600, sovereign: 600, bladeangel: 800,
-  liberty: 900, fate: 900, baron: 1000, monoceros: 1000, nu: 1100, twin: 1100, seraph: 1200,
+  starter: 0, frostpup: 300, sprout: 300, zapbeetle: 400, skychick: 400, tideseal: 600, rockbun: 600, shadowkit: 800,
+  flarefox: 900, halobun: 900, puckimp: 1000, unihorn: 1000, mechapup: 1100, sparksprite: 1100, drakeling: 1200,
 };
-// 涂装价钱（要和网页 js/progress.js 里的 SKINS 一致）
+// 颜色（换色）价钱（要和网页 js/progress.js 里的 SKINS 一致）
 var SKIN_PRICES = { 'default': 0, desert: 300, arctic: 300, sakura: 400, blackops: 400, neon: 600, gold: 800, optical: 1000 };
 var ADMIN_COINS = 999999;
 var STAFF_CLASS = 'STAFF';
@@ -155,7 +155,7 @@ function doGet(e) {
   try {
     if (p.action === 'config') return json_(getPublicConfig_());
     if (p.action === 'leaderboard') return json_(getLeaderboard_());
-    return json_({ ok: true, message: 'Mecha Strike Typer backend is running. 接收端运行中。' });
+    return json_({ ok: true, message: 'Digi Monster Typer backend is running. 接收端运行中。' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: String(err) });
   }
@@ -314,7 +314,7 @@ function parseStats_(v) {
   return s;
 }
 
-// 送去网页的版本：不含内部栏位；管理员金币无限、全部机体可用
+// 送去网页的版本：不含内部栏位；管理员金币无限、全部伙伴怪兽可用
 function publicPlayer_(p, admin) {
   var out = { email: p.email, cls: p.cls, seat: p.seat, name: p.name, nickname: p.nickname,
     coins: p.coins, owned: p.owned.slice(), selected: p.selected, admin: !!admin,
@@ -495,7 +495,7 @@ function setTitle_(body) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Pilot level, badges & titles (same rules as js/progress.js)        */
+/*  Tamer level, badges & titles (same rules as js/progress.js)        */
 /* ------------------------------------------------------------------ */
 
 var BADGES = [
@@ -678,7 +678,7 @@ function topTen_(rows, players) {
     .slice(0, 10)
     .map(function (r) {
       var p = players[r.email];
-      return { nickname: (p && p.nickname) || r.nickname || 'Pilot', title: (p && p.title) || '', level: p ? levelFromXp_(p.xp) : 1,
+      return { nickname: (p && p.nickname) || r.nickname || 'Tamer', title: (p && p.title) || '', level: p ? levelFromXp_(p.xp) : 1,
         wpm: r.wpm, acc: r.acc, time: r.time };
     });
 }
