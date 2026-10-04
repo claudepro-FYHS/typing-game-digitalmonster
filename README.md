@@ -280,6 +280,7 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ### Fun extras
 
+- **Music:** an original, upbeat anime-opening style song (rock drums, driving bass, guitar chords, a big chorus). It speeds up as your combo grows. Turn it off with MUSIC at the base.
 - **Combo effects:** at 10, 25, 50 and 100 words in a row a big **COMBO** banner appears, a ring glows under your partner, the screen edges light up and the music speeds up. At 20 your partner evolves (Royal Knights give items at 25, 50 and 100 instead).
 - **Final blow:** when a boss goes down, the game switches to slow motion and the camera rushes in before the big explosion.
 - **Revenge viruses:** words you mistyped come back in your next solo game as golden ⭐ viruses worth **double points and coins**. Beat one and that word leaves your revenge list.

@@ -548,10 +548,38 @@ function updateEnvironment(dt, speed) {
 }
 
 /* =====================================================================
- *  BACKGROUND MUSIC (tiny chiptune loop; speeds up with your combo)
+ *  BACKGROUND MUSIC: an original J-pop rock "anime opening" style song
+ *  (fast, bright, driving bass, rock drums, power-chord guitar, a soaring
+ *  chorus). It is NOT any real song's melody. D major, ~152 BPM, 24 bars:
+ *  intro 4, verse 8, pre-chorus 4, chorus 8, then it loops. It speeds up
+ *  with your combo (setTier).
  * ===================================================================== */
+const SONG = (() => {
+  // chords: [bass root (MIDI), chord root (MIDI), minor?] one per bar
+  const C = { D: [38, 62, 0], A: [45, 57, 0], Ac: [37, 57, 0], Bm: [35, 59, 1], G: [43, 55, 0], Em: [40, 52, 1], Fm: [42, 54, 1] };
+  const bars = [
+    ["G", "A", "Fm", "Bm"],                         // intro
+    ["D", "Ac", "Bm", "G", "D", "A", "G", "A"],     // verse
+    ["Em", "Fm", "G", "A"],                         // pre-chorus
+    ["G", "A", "Fm", "Bm", "G", "A", "D", "D"],     // chorus
+  ];
+  // lead melody, one array per bar: [MIDI note or 0 = rest, length in eighths] (8 eighths per bar)
+  const mel = [
+    [[74, 2], [76, 1], [78, 2], [76, 1], [74, 1], [71, 1]], [[73, 2], [74, 1], [76, 3], [69, 2]], [[73, 1], [74, 1], [73, 1], [69, 1], [66, 2], [69, 2]], [[71, 6], [0, 2]],
+    [[66, 1], [66, 1], [69, 2], [66, 1], [64, 1], [62, 2]], [[64, 2], [66, 1], [64, 1], [61, 2], [0, 2]], [[62, 1], [64, 1], [66, 2], [69, 2], [71, 2]], [[69, 4], [67, 2], [0, 2]],
+    [[66, 1], [66, 1], [69, 2], [71, 1], [69, 1], [66, 2]], [[64, 1], [66, 1], [67, 2], [66, 2], [64, 2]], [[62, 2], [64, 1], [66, 1], [67, 2], [69, 2]], [[69, 6], [0, 2]],
+    [[67, 2], [66, 1], [64, 1], [67, 2], [71, 2]], [[69, 2], [66, 1], [69, 1], [73, 4]], [[74, 2], [73, 1], [71, 1], [74, 2], [76, 2]], [[76, 2], [76, 1], [78, 1], [79, 2], [81, 2]],
+    [[81, 2], [79, 1], [78, 1], [79, 2], [74, 2]], [[76, 3], [74, 1], [73, 2], [69, 2]], [[73, 1], [74, 1], [76, 2], [78, 2], [76, 1], [74, 1]], [[74, 4], [71, 2], [74, 2]],
+    [[79, 2], [78, 1], [76, 1], [74, 2], [79, 2]], [[81, 3], [79, 1], [78, 2], [76, 2]], [[78, 2], [76, 1], [74, 1], [76, 2], [69, 2]], [[74, 6], [0, 2]],
+  ];
+  const chords = [].concat(...bars).map(n => C[n]);
+  const section = [].concat(...bars.map((b, i) => b.map(() => ["intro", "verse", "pre", "chorus"][i])));
+  const lead = []; // per eighth: [note, length] at note starts
+  mel.forEach((bar, b) => { let pos = 0; for (const [n, l] of bar) { if (n) lead[b * 8 + pos] = [n, l]; pos += l; } if (pos !== 8) console.warn("song bar", b, "has", pos, "eighths"); });
+  return { chords, section, lead, bars: chords.length };
+})();
 const Music = {
-  on: false, timer: null, step: 0, nextT: 0, tempo: 1, gain: null,
+  on: false, timer: null, step: 0, nextT: 0, tempo: 1, gain: null, drive: null,
   start() {
     this.stop();
     if (!S.prefs.music || !S.prefs.sound) return;
@@ -560,6 +588,11 @@ const Music = {
       actx = actx || new AC(); if (actx.state === "suspended") actx.resume();
       if (!noiseBuf) { noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.6, actx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
       this.gain = actx.createGain(); this.gain.gain.value = 0.05; this.gain.connect(actx.destination);
+      // "guitar": a soft-clipping distortion followed by a gentle low-pass
+      const ws = actx.createWaveShaper(), curve = new Float32Array(1024);
+      for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; curve[i] = Math.tanh(x * 4); }
+      ws.curve = curve; const lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600;
+      ws.connect(lp); lp.connect(this.gain); this.drive = ws;
       this.on = true; this.step = 0; this.tempo = 1; this.nextT = actx.currentTime + 0.15;
       this.timer = setInterval(() => this.tick(), 60);
     } catch (e) {}
@@ -568,27 +601,48 @@ const Music = {
     this.on = false; if (this.timer) clearInterval(this.timer); this.timer = null;
     if (this.gain) { try { this.gain.gain.setTargetAtTime(0, actx.currentTime, 0.2); } catch (e) {} this.gain = null; }
   },
-  setTier(tier) { this.tempo = [1, 1.08, 1.16, 1.25, 1.36][tier] || 1; },
+  setTier(tier) { this.tempo = [1, 1.04, 1.08, 1.12, 1.16][tier] || 1; },
   tick() {
     if (!this.on || !actx) return;
-    const eighth = 60 / (124 * this.tempo) / 2;
+    const eighth = 60 / (152 * this.tempo) / 2;
     while (this.nextT < actx.currentTime + 0.25) { this.note(this.step, this.nextT, eighth); this.nextT += eighth; this.step++; }
   },
   note(step, t, len) {
-    // I - V - vi - IV adventure progression, square bass + triangle arpeggio (8-bit style)
-    const roots = [60, 55, 57, 53], quality = [[0, 4, 7, 12], [0, 4, 7, 11], [0, 3, 7, 12], [0, 4, 7, 9]];
-    const bar = Math.floor(step / 8) % 4, root = roots[bar], q = quality[bar];
+    const bar = Math.floor(step / 8) % SONG.bars, pos = step % 8, i = bar * 8 + pos;
+    const [bass, root, minor] = SONG.chords[bar], sec = SONG.section[bar];
     const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
-    const play = (freq, dur, vol, type) => {
+    const play = (freq, dur, vol, type, dest, attack) => {
       const o = actx.createOscillator(), g = actx.createGain();
       o.type = type; o.frequency.setValueAtTime(freq, t);
-      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(this.gain); o.start(t); o.stop(t + dur + 0.02);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + (attack || 0.005)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(dest || this.gain); o.start(t); o.stop(t + dur + 0.03);
     };
-    if (step % 2 === 0) play(hz(root - 12), len * 1.8, 0.9, "square");
-    play(hz(root + 12 + q[[0, 1, 2, 3, 2, 1, 2, 3][step % 8]]), len * 0.9, 0.35, "triangle");
-    if (step % 16 === 14) play(hz(root + 24 + q[2]), len * 1.6, 0.18, "square");
-    if (step % 4 === 0) { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.15); g.gain.setValueAtTime(1.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18); o.connect(g); g.connect(this.gain); o.start(t); o.stop(t + 0.2); }
-    if (step % 2 === 1 && noiseBuf) { const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain(); s.buffer = noiseBuf; f.type = "highpass"; f.frequency.value = 7000; g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05); s.connect(f); f.connect(g); g.connect(this.gain); s.start(t); s.stop(t + 0.06); }
+    const noise = (dur, vol, type, freq) => {
+      const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+      s.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      s.connect(f); f.connect(g); g.connect(this.gain); s.start(t, Math.random() * 0.3); s.stop(t + dur + 0.02);
+    };
+    const loud = sec === "chorus" ? 1.15 : sec === "verse" ? 0.8 : 1;
+    // bass: driving eighths (octave jumps in the chorus)
+    play(hz(bass + (sec === "chorus" && pos % 2 ? 12 : 0)), len * 0.9, 0.8 * loud, "triangle");
+    play(hz(bass), len * 0.7, 0.18 * loud, "square");
+    // guitar: power chord (root, fifth, octave) through the distortion; palm-muted in the verse
+    if (this.drive) {
+      const g = sec === "verse" ? 0.05 : 0.08, d = sec === "verse" ? len * 0.6 : len * 0.95;
+      for (const iv of [0, 7, 12]) play(hz(root - 12 + iv), d, g, "sawtooth", this.drive);
+    }
+    // pad on beat 1: the full triad, soft
+    if (pos === 0 && sec !== "verse") for (const iv of [0, minor ? 3 : 4, 7]) play(hz(root + iv), len * 7, 0.07, "triangle", null, 0.05);
+    // lead melody: square + octave-up triangle sparkle
+    const L = SONG.lead[i];
+    if (L) { play(hz(L[0]), len * L[1] * 0.95, 0.32 * loud, "square", null, 0.01); play(hz(L[0] + 12), len * L[1] * 0.8, 0.08, "triangle"); }
+    // drums: kick on 1 and 3 (and the "and" of 4 in the chorus), snare on 2 and 4, hi-hat eighths, crash at each section start
+    const kick = () => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14); g.gain.setValueAtTime(1.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2); o.connect(g); g.connect(this.gain); o.start(t); o.stop(t + 0.22); };
+    if (pos === 0 || pos === 4 || (sec === "chorus" && pos === 7) || (sec === "pre" && pos === 6)) kick();
+    if (pos === 2 || pos === 6) { noise(0.16, 0.7, "bandpass", 1800); play(190, 0.08, 0.25, "triangle"); }
+    if (sec === "pre" && bar % 4 === 3 && pos >= 4) noise(0.1, 0.5, "bandpass", 2200); // snare build-up before the chorus
+    noise(0.04, pos % 2 ? 0.18 : 0.3, "highpass", 8000);
+    if (pos === 0 && (bar === 0 || SONG.section[bar] !== SONG.section[(bar + SONG.bars - 1) % SONG.bars])) noise(0.9, 0.35, "highpass", 5000);
   },
 };
