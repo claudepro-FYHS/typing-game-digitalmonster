@@ -426,6 +426,7 @@ body.slowed #freeze-veil { display: block; background: rgba(120,255,170,.08); bo
           <li>Type 20 words in a row and your partner evolves! It changes back after 3 mistakes.</li>
           <li>Multiplayer: anyone can attack any virus — whoever finishes the word first gets the points!</li>
         </ul>
+        <p class="muted small" style="margin:4px 0 0">Game version <span id="app-version"></span></p>
       </details>
       <div class="row small" style="margin-top:6px">
         <button class="btn ghost" id="btn-edit-profile">EDIT PROFILE</button>
@@ -590,19 +591,22 @@ body.slowed #freeze-veil { display: block; background: rgba(120,255,170,.08); bo
 
 <div class="modal" id="modal"><div class="card"><div id="modal-body"></div><div class="row" style="justify-content:flex-end;margin-top:12px" id="modal-actions"><button class="btn ghost" id="btn-modal-close" style="flex:0 0 auto">CLOSE</button></div></div></div>
 
-<script src="config.js"></script>
-<script src="words.js"></script>
-<script src="meanings.js"></script>
-<script src="lib/three.min.js"></script>
-<script src="lib/postfx.js"></script>
-<script src="models.js"></script>
-<script src="lib/peerjs.min.js"></script>
-<script src="js/core.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/progress.js"></script>
-<script src="js/scene.js"></script>
-<script src="js/game.js"></script>
-<script src="js/net.js"></script>
-<script src="js/pages.js"></script>
+<!-- APP_VERSION: change it (here and in every ?v= below) whenever the game changes, so browsers
+     load the new files instead of old copies from their cache. -->
+<script>window.APP_VERSION = "2026-10-04";</script>
+<script src="config.js?v=2026-10-04"></script>
+<script src="words.js?v=2026-10-04"></script>
+<script src="meanings.js?v=2026-10-04"></script>
+<script src="lib/three.min.js?v=2026-10-04"></script>
+<script src="lib/postfx.js?v=2026-10-04"></script>
+<script src="models.js?v=2026-10-04"></script>
+<script src="lib/peerjs.min.js?v=2026-10-04"></script>
+<script src="js/core.js?v=2026-10-04"></script>
+<script src="js/calendar.js?v=2026-10-04"></script>
+<script src="js/progress.js?v=2026-10-04"></script>
+<script src="js/scene.js?v=2026-10-04"></script>
+<script src="js/game.js?v=2026-10-04"></script>
+<script src="js/net.js?v=2026-10-04"></script>
+<script src="js/pages.js?v=2026-10-04"></script>
 </body>
 </html>
