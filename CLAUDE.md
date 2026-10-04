@@ -35,6 +35,8 @@ An English typing game with chibi Digimon (the teacher chose the heroes, villain
 | `apps-script/Code.gs` | The whole backend. The teacher pastes it into Apps Script. |
 | `tests/` | Unit tests (backend in Node) and browser tests (Playwright). See **Testing**. |
 
+**Cache busting:** GitHub Pages lets browsers cache files for 10 minutes, so `index.html` loads every script as `file.js?v=APP_VERSION` and models.js adds the same `?v=` to `art/*.svg`. When you change the game, put a new date in `window.APP_VERSION` **and** in every `?v=` in index.html (they must match). The version is shown under *How to play*.
+
 Script order: `config.js, words.js, meanings.js, lib/three.min.js, lib/postfx.js, models.js, lib/peerjs.min.js, js/core.js, js/calendar.js, js/progress.js, js/scene.js, js/game.js, js/net.js, js/pages.js`. Everything is plain global scripts (no modules), so functions are shared through globals.
 
 ## Game engine (js/game.js)

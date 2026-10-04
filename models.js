@@ -201,7 +201,7 @@ const BOSSES = [
  *  SVG → CANVAS (cached). raster(id, { h, flip, skin, sil }) returns a canvas
  *  at once; it is blank until the SVG has loaded (cv.ver goes up then).
  * ===================================================================== */
-const ART_DIR = "art/";
+const ART_DIR = "art/", ART_V = window.APP_VERSION ? "?v=" + window.APP_VERSION : ""; // ?v= so a new version is not hidden by the browser cache
 const svgs = {};
 let pendingArt = 0, artWaiters = [];
 function svgImage(id) {
@@ -215,7 +215,7 @@ function svgImage(id) {
   };
   e.img.onload = () => { e.ok = true; done(); };
   e.img.onerror = () => { e.bad = true; done(); };
-  e.img.src = ART_DIR + id + ".svg";
+  e.img.src = ART_DIR + id + ".svg" + ART_V;
   return e;
 }
 /* resolves when every picture asked for so far has loaded (or failed) */
@@ -551,9 +551,9 @@ function portrait(def, skin, opts) {
 }
 function portraitURL(def, skin, evo) {
   const id = evo ? (def.evoArt || def.art) : def.art;
-  if (!skin || !skin.colors) return ART_DIR + id + ".svg";
+  if (!skin || !skin.colors) return ART_DIR + id + ".svg" + ART_V;
   const cv = raster(id, { h: 160, skin });
-  return cv.ver ? cv.toDataURL() : ART_DIR + id + ".svg";
+  return cv.ver ? cv.toDataURL() : ART_DIR + id + ".svg" + ART_V;
 }
 
 // start loading every partner and enemy picture now (bosses load when they appear)

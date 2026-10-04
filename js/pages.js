@@ -207,6 +207,7 @@ function frame(now) {
 /* =====================================================================
  *  BOOT
  * ===================================================================== */
+$("#app-version").textContent = window.APP_VERSION || "dev";
 applyQuality();
 addEventBank();
 setEnvironment("plains", activeEvent() ? activeEvent().id : null);
