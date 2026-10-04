@@ -546,18 +546,18 @@ function sfx(type) {
     if (!AC) return;
     actx = actx || new AC();
     if (actx.state === "suspended") actx.resume();
-    const t = actx.currentTime, g = actx.createGain();
-    g.connect(actx.destination);
-    const tone = (freq, dur, vol, wave = "square", slide = 0) => {
-      const o = actx.createOscillator(); o.type = wave; o.frequency.setValueAtTime(freq, t);
+    const now = actx.currentTime;
+    const out = () => { const g = actx.createGain(); g.connect(actx.destination); return g; };
+    const tone = (freq, dur, vol, wave = "square", slide = 0, at = 0) => {
+      const t = now + at, g = out(), o = actx.createOscillator(); o.type = wave; o.frequency.setValueAtTime(freq, t);
       if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); o.start(t); o.stop(t + dur + 0.02);
     };
-    const noise = (dur, vol) => {
+    const noise = (dur, vol, from = 1800, to = 120, high = false, at = 0) => {
       if (!noiseBuf) { noiseBuf = actx.createBuffer(1, actx.sampleRate * 0.6, actx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
-      const s = actx.createBufferSource(); s.buffer = noiseBuf;
-      const f = actx.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(120, t + dur);
+      const t = now + at, g = out(), s = actx.createBufferSource(); s.buffer = noiseBuf;
+      const f = actx.createBiquadFilter(); f.type = high ? "bandpass" : "lowpass"; f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       s.connect(f); f.connect(g); s.start(t); s.stop(t + dur);
     };
@@ -571,6 +571,14 @@ function sfx(type) {
       case "buster": noise(0.8, 0.25); tone(220, 0.8, 0.08, "sawtooth", 600); break;
       case "clear": tone(520, 0.5, 0.06, "triangle", 520); break;
       case "steal": tone(300, 0.25, 0.05, "square", -150); break;
+      // partner attacks (MOVES in models.js)
+      case "atk-shot": noise(0.28, 0.12, 900, 200); tone(520, 0.22, 0.05, "sawtooth", -380); break;            // fireball whoosh
+      case "atk-big": noise(0.6, 0.22, 600, 60); tone(140, 0.6, 0.09, "sawtooth", -90); tone(70, 0.5, 0.08, "sine", -30, 0.05); break; // cannon boom
+      case "atk-volley": for (let i = 0; i < 4; i++) tone(900 - i * 60, 0.08, 0.04, "square", -500, i * 0.045); break; // pew pew pew
+      case "atk-bolt": for (let i = 0; i < 5; i++) tone(1400 + Math.random() * 1600, 0.05, 0.035, "square", -900, i * 0.03); noise(0.2, 0.08, 4000, 2500, true); break; // zap
+      case "atk-beam": tone(300, 0.35, 0.06, "sawtooth", 1500); tone(600, 0.35, 0.03, "square", 2400); break;   // laser
+      case "atk-dash": noise(0.16, 0.14, 2500, 6000, true); tone(1200, 0.12, 0.04, "triangle", -700, 0.13); noise(0.12, 0.12, 3000, 800, true, 0.14); break; // swoosh + slash
+      case "evolve": [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 0.06, "triangle", 0, i * 0.08)); tone(1047, 0.6, 0.05, "square", 520, 0.32); break;
     }
   } catch (e) {}
 }
