@@ -37,7 +37,7 @@ An English typing game with chibi Digimon (the teacher chose the heroes, villain
 
 **Cache busting:** GitHub Pages lets browsers cache files for 10 minutes, so `index.html` loads every script as `file.js?v=APP_VERSION` and models.js adds the same `?v=` to `art/*.svg`. When you change the game, put a new date in `window.APP_VERSION` **and** in every `?v=` in index.html (they must match). The version is shown under *How to play*.
 
-Script order: `config.js, words.js, meanings.js, lib/three.min.js, lib/postfx.js, models.js, lib/peerjs.min.js, js/core.js, js/calendar.js, js/progress.js, js/scene.js, js/game.js, js/net.js, js/pages.js`. Everything is plain global scripts (no modules), so functions are shared through globals.
+Script order: `config.js, words.js, meanings.js, lib/three.min.js, lib/postfx.js, models.js, lib/peerjs.min.js, js/core.js, js/calendar.js, js/progress.js, js/scene.js, js/game.js, js/net.js, js/exam.js, js/pages.js`. Everything is plain global scripts (no modules), so functions are shared through globals.
 
 ## Game engine (js/game.js)
 
@@ -52,6 +52,17 @@ Event-sourced, so solo and multiplayer share one code path:
 - A partner shows its Mega form while its special is active (`anim.special`) or while `anim.evo` is set (`G.evolved`: 20 words in a row, cleared after 3 mistakes; local player only). Evolution is cosmetic only. Each partner has its own movement and attack (`MOVES` in models.js: run/fly; shot, volley, bolt, beam or dash; a list = random pick). `shootFx` plays it (`attackFx` in scene.js) and sets `t.impactAt`, so the target explodes when the attack arrives; a dash moves the partner (`p.dash`, `DASH` timings) and back. The boss can be typed as soon as it appears. Royal Knights never evolve; at combo 25/50/100 the client asks for their `comboItem` (`requestComboItem` → host `grantComboItem`, net message `combo`).
 - Stages: kill `killsGoal()` enemies, then a boss. Festival bosses appear on odd stages during a festival. Normal bosses unlock by tamer level (`bossPoolSize`).
 - Games under 20 seconds are not uploaded. A failed upload is kept in `dmt_pending` and retried later; the result screen always shows.
+
+## Typing test (js/exam.js + "Typing test" in Code.gs)
+
+The graded typing test is **shared with the other typing game** (Mecha Strike Typer / Digi Monster Typer): `js/exam.js`, the "Typing test" block at the end of `apps-script/Code.gs`, `tests/unit-test-mode.js` and `tests/e2e-exam.js` must stay identical in both repos (only `GAME_TITLE` in Code.gs differs). Change both repos together.
+
+- `exam.js` adds its own screen, CSS and the 📝 TYPING TEST button (after `#btn-multi`), so index.html only loads the script. It uses globals from core.js and keeps out of the game engine (`G`, `typer`): the test is a plain timed word stream, no enemies.
+- Words: `seededWords(code, bank, n)` — a seeded shuffle bag, so one test code gives everyone the same words in the same order, in both games (the `everyday` bank is identical in both words.js; keep it so).
+- Typing: letters must match, SPACE ends a word, a wrong key is an error and does not advance. WPM = correct keys (letters + spaces) / 5 / minutes; Net WPM = WPM × accuracy. Input is one character per `input` event; pasted / multi-character input is ignored.
+- Server: `testInfo` (read only), `testStart` / `testFinish` (lock). Settings live in a shared spreadsheet (`TestSheetId` setting; blank = this one) in the `TestSettings` tab, read through `testConfig_()` (cached 30 s). `testFinish` refuses a finish earlier than the test time unless `left` (student left the page; still scored over the full time), rejects > 220 WPM, and computes the score (`testScore_`: net 10 = 40, linear to 100 at the form's `TestFullWPM`, never below 40; accuracy under `TestPassAccuracy` halves). `TestResults` holds the best attempt per student and code.
+- A started attempt that is never finished counts as used (reloading the page can't buy another try). The teacher gives an attempt back by deleting its `TestAttempts` row.
+- UI text stays English.
 
 ## Backend (apps-script/Code.gs)
 
@@ -110,6 +121,8 @@ node run.js e2e-festivals gallery   # just some of them
 | Test | Covers |
 |---|---|
 | `unit.js` | Login, tokens, profiles, nickname filter, scores, coin cap, shop, admins, gifts, XP/badges/streaks, events config, calendar rules, class codes, new school year, outside accounts |
+| `unit-test-mode.js` | Typing test backend: score formula, full-marks speed per form, attempts shared by two games through one test sheet, too early / left page / too fast, class limit, broken TestSheetId |
+| `e2e-exam.js` | Typing test page: guest practice, school test (1 minute), paste ignored, leaving the page, attempt limit, phone |
 | `e2e-classes.js` | Form + class pickers (phone), new school year, outside Google account, class battle groups, `AllowOtherAccounts = NO` |
 | `e2e-gameplay.js` | Guest hangar, paint shop, battlefields, badges, combo tiers, revenge words, festival boss, slow-mo, share card, class battle board |
 | `e2e-phone-school.js` | Phone layout, school sign-in and profile, full game, titles, leaderboard |

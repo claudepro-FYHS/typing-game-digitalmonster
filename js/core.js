@@ -156,6 +156,8 @@ async function loadRemoteConfig() {
       S.remote.grades = Array.isArray(c.grades) ? c.grades : [];
       store.set("dmt_grades", S.remote.grades);
       S.remote.allowOthers = c.allowOthers !== false;
+      S.remote.test = !!c.test;
+      if (window.examRefreshButton) examRefreshButton();
       if (c.domain) S.remote.domain = c.domain;
       S.remote.clientId = c.clientId || "";
       S.remote.minAccuracy = c.minAccuracy;

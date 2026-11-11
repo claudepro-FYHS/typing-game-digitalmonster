@@ -331,6 +331,27 @@ The game has **18 festival events** and switches them on by itself — you don't
 
 ---
 
+## Typing test (graded)
+
+The **📝 TYPING TEST** button (under MULTIPLAYER) opens a plain, timed typing test: no enemies, items or combos, so every student is measured the same way. Anyone can **practise** (1 minute, not saved). A **real test** needs a school sign-in and an open test code.
+
+**Both typing games share one test.** Make one Google Sheet for the test (for example "Typing Test"), copy its ID (the part of the URL between `/d/` and `/edit`) into the `TestSheetId` row of the **Settings** tab of *both* games, then run `setup` once in each game's Apps Script and deploy a new version. `setup` adds three tabs to the test sheet:
+
+| Tab | What it is |
+|---|---|
+| `TestSettings` | `TestCode` (blank = no test; a new code = a new test, everybody gets new attempts), `TestMinutes` (5), `TestAttempts` (2, the best counts), `TestWordBank` (everyday), `TestFullWPM` (Net WPM for full marks per form, never below 40), `TestPassAccuracy` (85), `TestClasses` (blank = everyone, or e.g. `J2, S1S2`) |
+| `TestAttempts` | One row per attempt: class, seat, name, game, status (started / finished / left page), WPM, accuracy, Net WPM, score |
+| `TestResults` | One row per student and test: attempts used and the **best score** — copy this into the mark book |
+
+How the test works: the student types the words in order and presses SPACE after each word. A wrong key is a mistake and the cursor waits for the right key. Everyone gets the same words in the same order for one test code (in both games).
+
+How it is scored:
+- WPM = correct keys (letters and spaces) ÷ 5 ÷ minutes. Accuracy = correct keys ÷ all keys. **Net WPM = WPM × accuracy.**
+- Score: Net 10 WPM = 40 points, rising in a straight line to **100 at the full-marks speed** of the student's form (default J1–J2 40, J3 and senior 45). Below 10 Net WPM: 4 points per WPM.
+- Accuracy under `TestPassAccuracy` (85 %) halves that attempt.
+- Switching to another tab or window ends the attempt (scored over the full time). Closing or reloading the page uses up the attempt. If a student had a real problem, delete that row in `TestAttempts` to give the attempt back.
+- Pasted or auto-completed text is ignored. More than 220 WPM is rejected.
+
 ## Classes, the new school year, and players from outside the school
 
 **Classes.** Students pick their **form** (J1, J2, J3, S1AC, S1S, S2AC, S2S, S3AC, S3S) and then their **class number**. The class is saved like this:
